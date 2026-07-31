@@ -1194,5 +1194,28 @@ function closeMood(){ document.getElementById('moodOverlay').classList.remove('s
 buildSidebar();
 go('dashboard');
 </script>
+  <!-- Bibliotecas do Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<script>
+  // Sua configuração
+  const firebaseConfig = {
+    apiKey: "AIzaSyBQCMlllVtmCw3daooldtm-KMoVKa2cN8E",
+    authDomain: "buenos-aires-trip.firebaseapp.com",
+    projectId: "buenos-aires-trip",
+    storageBucket: "buenos-aires-trip.firebasestorage.app",
+    messagingSenderId: "992253023548",
+    appId: "1:992253023548:web:b1be1c775edbb5690e3a39",
+    measurementId: "G-DL1697NZVR",
+    // Cole a URL que você copiou no Passo 2 entre as aspas abaixo:
+    databaseURL: "https://buenos-aires-trip-default-rtdb.firebaseio.com/" 
+  };
+
+  // Inicializa o Firebase e o Banco em tempo real
+  firebase.initializeApp(firebaseConfig);
+  const database = firebase.database();
+  const todoRef = database.ref('lista_viagem');
+</script>
 </body>
 </html>
