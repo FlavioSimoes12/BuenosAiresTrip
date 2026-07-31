@@ -1,0 +1,1198 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Buenos Aires Companion</title>
+<style>
+:root{
+  --navy:#1F4E79; --ice:#F8F9FA; --gray:#E9ECEF; --gold:#C9A227; --green:#4a7c59;
+  --bg:#0f1115; --surface:#171a21; --surface2:#1f232c; --border:#2a2f3a;
+  --text:#e8e9ec; --muted:#8a8f9c; --dim:#565b66;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);}
+.app{display:flex;min-height:100vh;}
+
+/* SIDEBAR */
+.sidebar{
+  position:fixed;top:0;left:0;bottom:0;width:230px;background:var(--surface);
+  border-right:0.5px solid var(--border);overflow-y:auto;z-index:40;transition:transform .2s;
+}
+.sidebar.hidden{transform:translateX(-100%);}
+.sb-head{padding:1.1rem 1rem .8rem;border-bottom:0.5px solid var(--border);}
+.sb-head b{color:var(--gold);font-size:14px;}
+.sb-head span{display:block;font-size:10px;color:var(--muted);margin-top:2px;}
+.sb-nav{padding:.6rem;}
+.sb-item{
+  display:flex;align-items:center;gap:9px;padding:.55rem .7rem;border-radius:8px;font-size:13px;
+  color:var(--muted);cursor:pointer;margin-bottom:2px;
+}
+.sb-item:hover{background:var(--surface2);}
+.sb-item.active{background:var(--navy);color:#fff;}
+.sb-item .ic{font-size:14px;width:18px;text-align:center;}
+
+.main{flex:1;margin-left:230px;min-height:100vh;padding-bottom:3rem;transition:margin-left .2s;}
+.main.full{margin-left:0;}
+@media(max-width:760px){
+  .sidebar{transform:translateX(-100%);width:78%;max-width:280px;}
+  .sidebar.open{transform:translateX(0);}
+  .sidebar.hidden{transform:translateX(-100%);}
+  .main{margin-left:0;}
+}
+.topbar{
+  position:sticky;top:0;z-index:30;background:var(--bg);border-bottom:0.5px solid var(--border);
+  padding:.8rem 1rem;display:flex;align-items:center;gap:10px;
+}
+.menu-btn{font-size:18px;cursor:pointer;color:var(--gold);}
+.topbar h1{font-size:14px;font-weight:500;}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:35;display:none;}
+.overlay.show{display:block;}
+
+.content{padding:1rem;}
+.card{background:var(--surface);border:0.5px solid var(--border);border-radius:12px;padding:1rem;margin-bottom:.8rem;}
+.card h2{font-size:14px;font-weight:500;color:var(--gold);margin-bottom:.6rem;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;}
+.stat{background:var(--surface2);border-radius:10px;padding:.7rem;}
+.stat b{display:block;font-size:18px;color:var(--text);}
+.stat span{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}
+
+.pill{display:inline-block;font-size:10px;padding:2px 9px;border-radius:20px;background:var(--surface2);color:var(--muted);}
+.pill.gold{background:rgba(201,162,39,.15);color:var(--gold);}
+.pill.green{background:rgba(74,124,89,.2);color:#7fbf94;}
+
+/* checklist */
+.chk-item{display:flex;align-items:center;gap:8px;padding:.4rem 0;font-size:13px;border-bottom:0.5px solid var(--border);}
+.chk-item:last-child{border-bottom:none;}
+.chk{width:16px;height:16px;min-width:16px;border-radius:4px;border:1px solid var(--dim);cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.chk.on{background:var(--gold);border-color:var(--gold);}
+.chk.on::after{content:'✓';font-size:10px;color:#0f1115;font-weight:700;}
+.chk-text.on{color:var(--dim);text-decoration:line-through;}
+
+/* quick buttons */
+.qbtns{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.6rem;}
+.qbtn{
+  background:var(--surface2);border:0.5px solid var(--border);border-radius:20px;padding:.5rem 1rem;
+  font-size:12px;color:var(--text);cursor:pointer;
+}
+.qbtn:active{background:var(--navy);}
+
+/* day list */
+.day-row{
+  display:flex;align-items:center;gap:.7rem;padding:.7rem;background:var(--surface);
+  border:0.5px solid var(--border);border-radius:10px;margin-bottom:.5rem;cursor:pointer;
+}
+.day-badge{width:34px;height:34px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;}
+.day-info b{display:block;font-size:13px;}
+.day-info span{font-size:11px;color:var(--muted);}
+.day-arrow{margin-left:auto;color:var(--dim);}
+
+/* bairro cards */
+.bairro-card{background:var(--surface);border:0.5px solid var(--border);border-radius:12px;padding:1rem;margin-bottom:.7rem;}
+.bairro-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:.3rem;}
+.bairro-title b{font-size:15px;}
+.stars{color:var(--gold);font-size:12px;}
+.bairro-mood{font-size:12px;color:var(--muted);margin-bottom:.5rem;font-style:italic;}
+.bairro-section{margin-top:.6rem;}
+.bairro-section h4{font-size:11px;color:var(--gold);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem;}
+.bairro-section p{font-size:12.5px;color:var(--muted);line-height:1.55;}
+.street-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:.3rem;}
+.street-tag{font-size:11px;background:var(--surface2);padding:2px 8px;border-radius:8px;color:var(--text);}
+
+/* gastro items */
+.gastro-item{display:flex;justify-content:space-between;align-items:flex-start;padding:.6rem 0;border-bottom:0.5px solid var(--border);}
+.gastro-item:last-child{border-bottom:none;}
+.gastro-name{font-size:13px;font-weight:500;}
+.gastro-desc{font-size:11.5px;color:var(--muted);margin-top:2px;}
+.gastro-tag{font-size:10px;color:var(--gold);white-space:nowrap;margin-left:8px;}
+
+/* fab */
+.fab{
+  position:fixed;bottom:20px;right:20px;background:var(--gold);color:#0f1115;border-radius:50%;
+  width:52px;height:52px;display:flex;align-items:center;justify-content:center;font-size:20px;
+  box-shadow:0 4px 14px rgba(0,0,0,.4);cursor:pointer;z-index:20;
+}
+
+/* sem pressa modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:60;display:none;align-items:flex-end;}
+.modal-overlay.show{display:flex;}
+.modal{background:var(--surface);width:100%;border-radius:16px 16px 0 0;padding:1.2rem 1rem 2rem;max-height:80vh;overflow-y:auto;}
+.modal h3{font-size:15px;margin-bottom:.8rem;}
+.mood-grid{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;}
+.mood-btn{background:var(--surface2);border:0.5px solid var(--border);border-radius:10px;padding:.8rem;text-align:center;font-size:13px;cursor:pointer;}
+.mood-btn:active{background:var(--navy);}
+.mood-answer{background:var(--surface2);border-left:2px solid var(--gold);border-radius:8px;padding:.8rem;margin-top:.8rem;font-size:13px;line-height:1.6;color:var(--text);}
+.modal-close{text-align:center;padding-top:1rem;color:var(--muted);font-size:12px;cursor:pointer;}
+
+textarea, input[type=number]{
+  width:100%;background:var(--surface2);border:0.5px solid var(--border);color:var(--text);
+  border-radius:8px;padding:.6rem;font-size:13px;font-family:inherit;
+}
+.small-btn{background:var(--navy);color:#fff;border:none;border-radius:8px;padding:.5rem 1rem;font-size:12.5px;cursor:pointer;margin-top:.5rem;}
+
+.egg-tag{font-size:10px;background:rgba(139,94,60,.3);color:#d09b6f;padding:1px 7px;border-radius:20px;margin-left:5px;}
+.hist-toggle{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;border:1px solid var(--gold);color:var(--gold);font-size:9px;margin-left:5px;cursor:pointer;}
+.hist-box{display:none;font-size:11.5px;color:var(--muted);background:var(--surface2);border-left:2px solid var(--gold);padding:.5rem .7rem;margin-top:5px;border-radius:6px;line-height:1.55;}
+.hist-box.open{display:block;}
+</style>
+</head>
+<body>
+
+<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
+<div class="app">
+  <div class="sidebar" id="sidebar">
+    <div class="sb-head"><b>Buenos Aires</b><span>seu companheiro de viagem · 15–22 set</span></div>
+    <div class="sb-nav" id="sbnav"></div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="menu-btn" onclick="toggleSidebar()">☰</div>
+      <h1 id="pagetitle">Dashboard</h1>
+    </div>
+    <div class="content" id="content"></div>
+  </div>
+</div>
+
+<div class="fab" onclick="openMood()">✨</div>
+
+<div class="modal-overlay" id="moodOverlay">
+  <div class="modal">
+    <h3>Estou sem pressa — o que você quer agora?</h3>
+    <div class="mood-grid" id="moodGrid"></div>
+    <div id="moodAnswer"></div>
+    <div class="modal-close" onclick="closeMood()">fechar</div>
+  </div>
+</div>
+
+<script>
+/* ================= DATA ================= */
+const DAYS = [
+ {n:1,date:"Ter 15/set",title:"Chegada + Recoleta",bairro:"recoleta",km:5,
+  resumo:"Hoje é chegada e Recoleta — bairro elegante, mansões Belle Époque. Depois de instalar as malas, caminhe sem pressa: Floralis Genérica e Plaza Francia ficam a 10min a pé, e à tarde o eixo é a Av. Alvear.",
+  itens:[
+   {t:"10h00",x:"Pouso no Aeroparque — Uber para o apartamento (~15min)"},
+   {t:"",x:"Deixar malas com anfitrião (confirmar antes)"},
+   {t:"11h00",x:"Café com medialunas numa padaria próxima"},
+   {t:"11h30",x:"Floralis Genérica",h:"Escultura de 2002 doada por Eduardo Catalano. Pétalas de aço abrem de manhã e fecham à noite por mecanismo hidráulico."},
+   {t:"",x:"Plaza Francia — sentar, absorver a cidade"},
+   {t:"13h00",x:"Almoço onde estiver"},
+   {t:"15h00",x:"Check-in no apartamento"},
+   {t:"17h00",x:"Eixo Av. Alvear até Plaza San Martín",h:"A rua mais cobiçada de Buenos Aires no início do século XX — mansões de arquitetos franceses deram à Recoleta o apelido de 'Paris sul-americana'."},
+   {t:"",x:"🍦 Sorvete Un'Altra Volta (Av. Coronel Díaz 2614) — dulce de leche granizado",g:1},
+   {t:"20h30",x:"Jantar — peça bife de chorizo com provoleta",g:1},
+  ]},
+ {n:2,date:"Qua 16/set",title:"Av. de Mayo + San Telmo",bairro:"centro",km:12,
+  resumo:"Manhã no Centro, tarde em San Telmo. No Café Tortoni peça torta ou churros e sente no salão de espelhos. No Mercado de San Telmo, a assinatura é o choripán no balcão. À tarde, Calle Defensa até Plaza Dorrego sem pressa.",
+  itens:[
+   {t:"09h30",x:"Uber para Plaza de Mayo"},
+   {t:"10h00",x:"Plaza de Mayo — Casa Rosada, Cabildo",h:"A Casa Rosada é sede do governo desde o séc. XIX. O Cabildo, de 1725, foi onde começou o processo de independência em 1810."},
+   {t:"",x:"🥚 Varanda do Cabildo — Bolívar 65, ao lado da Plaza de Mayo. Suba a escada interna à direita da entrada",egg:1},
+   {t:"10h30",x:"Eixo Av. de Mayo até o Obelisco — Palácio Barolo",h:"Construído em 1923, o prédio é uma alegoria à Divina Comédia de Dante — os andares representam Inferno, Purgatório e Paraíso."},
+   {t:"",x:"🍦 Café Tortoni — torta de chocolate ou churros",g:1,h:"Fundado em 1858, o café mais antigo de Buenos Aires. Ponto de encontro de Borges e Gardel."},
+   {t:"12h00",x:"Obelisco — 9 de Julho",h:"67 metros, construído em 1936 em 31 dias. A 9 de Julho é uma das avenidas mais largas do mundo."},
+   {t:"",x:"Teatro Colón — fachada",h:"Inaugurado em 1908, um dos teatros com melhor acústica do mundo. Levou 20 anos e 3 arquitetos para ficar pronto."},
+   {t:"",x:"🥚 Galería Güemes — Florida 165. Entre pela porta entre as lojas e olhe para cima assim que passar a entrada",egg:1},
+   {t:"13h00",x:"Uber para San Telmo"},
+   {t:"13h30",x:"🍦 Mercado de San Telmo — choripán no balcão",g:1,h:"Estrutura de ferro de 1897. Sempre foi mercado de bairro, só recentemente ganhou perfil turístico."},
+   {t:"",x:"🥚 Casa Mínima — Pasaje San Lorenzo 380, San Telmo (2 quadras do Mercado). Fachada de menos de 2,5m de largura entre dois prédios normais",egg:1},
+   {t:"15h00",x:"Eixo Calle Defensa até Plaza Dorrego",h:"A praça existe desde o séc. XVIII, parada de carroças que chegavam à cidade."},
+   {t:"16h30",x:"El Ateneo Grand Splendid",h:"Teatro de 1919 virado livraria em 2000 — plateia, camarotes e cúpula originais preservados."},
+   {t:"Noite",x:"Fazer web check-in Buquebus — buquebus.com"},
+  ]},
+ {n:3,date:"Qui 17/set",title:"Colônia do Sacramento",bairro:"colonia",km:9,
+  resumo:"Dia inteiro no Uruguai. Caminhar sem pressa pelo Portão de Campo, Rua dos Suspiros, subir o Farol. Qualquer restaurante à beira do rio serve chivito — o prato nacional.",
+  itens:[
+   {t:"06h30",x:"Uber para Terminal Buquebus"},
+   {t:"08h30",x:"Embarque — travessia 1h15",tag:"✓ reservado"},
+   {t:"10h00",x:"Portão de Campo",h:"Construído pelos portugueses no séc. XVII. Colônia trocou de mãos entre Portugal e Espanha várias vezes."},
+   {t:"",x:"Rua dos Suspiros",h:"A rua de paralelepípedo mais antiga de Colônia — origem do nome incerta. 💡 Foto perfeita: fique no meio da rua olhando para o rio ao fundo, luz da manhã de frente."},
+   {t:"",x:"Farol de Colônia",h:"Construído em 1857 sobre ruínas do Convento de San Francisco, destruído por incêndio."},
+   {t:"",x:"🥚 Muralhas do lado do rio — ao passar pelo Portão de Campo, vire à direita seguindo a muralha em vez de ir direto para o centro histórico",egg:1},
+   {t:"",x:"🥚 Museu do Origami — a poucas quadras do Farol, na área central do Bairro Histórico. Pergunte por \"Museo Origami\" — é pequeno e fácil de passar direto",egg:1},
+   {t:"12h30",x:"🍦 Almoço à beira do rio — chivito completo",g:1},
+   {t:"14h30",x:"Tarde livre, sem pressa"},
+   {t:"17h00",x:"Balsa de volta"},
+  ]},
+ {n:4,date:"Sex 18/set",title:"La Boca + Tango",bairro:"laboca",km:8,
+  resumo:"Manhã em La Boca, tarde na Recoleta, noite de tango. Caminito e uma empanada frita em pé. La Bombonera é opcional — decida na hora.",
+  itens:[
+   {t:"09h30",x:"Uber para La Boca"},
+   {t:"10h00",x:"Eixo Caminito",h:"Virou museu a céu aberto em 1959 pelo pintor Benito Quinquela Martín. Cores vêm da tradição dos imigrantes genoveses."},
+   {t:"",x:"🍦 Empanada frita em pé na rua",g:1},
+   {t:"11h00",x:"[OPCIONAL] La Bombonera — tour ou só fachada",opt:1,h:"Estádio de 1940. Formato de 3 arquibancadas quase verticais veio de limitação de terreno."},
+   {t:"12h30",x:"Almoço em La Boca — considere milanesa",g:1},
+   {t:"14h30",x:"Centro Cultural Recoleta",h:"Convento franciscano do séc. XVIII, virou centro cultural em 1980."},
+   {t:"15h30",x:"Plaza França + Av. Alvear"},
+   {t:"16h00",x:"[OPCIONAL] Chá da tarde L'Orangerie (Alvear Palace) — precisa reservar",opt:1},
+   {t:"21h00",x:"Piazzolla Tango — Galería Güemes",tag:"✓ reservado"},
+  ]},
+ {n:5,date:"Sab 19/set",title:"Daniel Bakery + Palermo + Puerto Madero",bairro:"palermo",km:9,
+  resumo:"Manhã na Daniel Bakery, depois Palermo Soho e Hollywood sem pressa — ruas, lojas, cafés. Fim de tarde em Puerto Madero com cerveja no pôr do sol. Sem museu, sem jardim pago.",
+  itens:[
+   {t:"09h30",x:"🍦 Daniel Bakery (Honduras 3714) — croissant de pistache",g:1,h:"💡 Foto perfeita: sente do lado de fora, luz da manhã vem de leste — melhor horário até 10h30."},
+   {t:"10h30",x:"🍦 Sorvete Antiche Tentazioni (Honduras 4770) — pistache di Sicilia",g:1,h:"💡 Peça dois sabores juntos: pistache com dulce de leche é a combinação mais pedida pelos argentinos."},
+   {t:"11h00",x:"Palermo Soho/Hollywood sem pressa — ruas, lojas, cafés"},
+   {t:"13h00",x:"Almoço onde estiver"},
+   {t:"15h00",x:"Uber para Puerto Madero"},
+   {t:"15h30",x:"Puente de la Mujer",h:"Projetada por Santiago Calatrava, 2001. Remete a um casal dançando tango. 💡 Foto perfeita: vire para oeste, espere o sol baixar, zoom 1x — a ponte fica dourada contra o céu."},
+   {t:"17h00",x:"🍦 Kraken Bar — cerveja no pôr do sol",g:1},
+   {t:"",x:"[OPCIONAL] Uptown — Honduras 5124, Palermo. Entre como se fosse usar a lavanderia e siga até a geladeira industrial ao fundo",opt:1,h:"A porta da geladeira industrial leva a um bar clandestino estilo Nova York dos anos 1920."},
+   {t:"20h00",x:"Jantar"},
+  ]},
+ {n:6,date:"Dom 20/set",title:"Feira de San Telmo + Palermo",bairro:"santelmo",km:6,
+  resumo:"Manhã na feira de San Telmo, tarde livre em Palermo. Estátua da Mafalda no caminho. Pizza de muzza com fainá para o almoço — invenção portenha única no mundo.",
+  itens:[
+   {t:"10h00",x:"Uber para San Telmo"},
+   {t:"10h30",x:"Feira de San Telmo — Plaza Dorrego"},
+   {t:"",x:"Estátua da Mafalda (Defensa com Chile)"},
+   {t:"13h00",x:"🍦 Pizza de muzza com fainá, em pé no balcão",g:1},
+   {t:"15h00",x:"Uber de volta para Palermo — tarde livre"},
+   {t:"",x:"🍦 Fernet com Coca num bar de bairro",g:1},
+   {t:"20h00",x:"Jantar em Palermo"},
+  ]},
+ {n:7,date:"Seg 21/set",title:"Tigre + Delta",bairro:"tigre",km:7,
+  resumo:"Dia inteiro em Tigre. Mate com facturas chegando. Paseo Victorica e Puerto de Frutos a pé, depois lancha até o Timón Dorado.",
+  itens:[
+   {t:"09h30",x:"Trem Linha Mitre para Tigre (~50min)"},
+   {t:"10h20",x:"🍦 Mate com facturas numa padaria local",g:1,h:"💡 Olhe as mesas antes de escolher a padaria: se estiver cheia de argentinos tomando mate de manhã, é sinal de que é boa."},
+   {t:"",x:"🥚 Museu de Arte de Tigre — Paseo Victorica 972, no meio do calçadão que você já vai caminhar",egg:1,h:"O prédio de 1912 era sede do exclusivo Tigre Club, elite portenha na época dourada do Delta."},
+   {t:"",x:"Paseo Victorica"},
+   {t:"11h30",x:"Puerto de Frutos",h:"Onde balsas do Delta descarregavam frutas para Buenos Aires — virou feira nos anos 1990."},
+   {t:"",x:"🥚 Carros antigos — olhe principalmente nas ruas Lavalle e Cazón, perto da estação de trem",egg:1},
+   {t:"13h00",x:"Timón Dorado — almoço à beira do Delta",tag:"reservar @timondorado"},
+   {t:"16h30",x:"Chegada de volta em Buenos Aires"},
+  ]},
+ {n:8,date:"Ter 22/set",title:"Último dia + Voo",bairro:"recoleta",km:5,
+  resumo:"Sem pressa até o voo. Av. Santa Fe para compras, Florería Atlântico como última descoberta, sorvete de despedida na Rapanui.",
+  itens:[
+   {t:"11h00",x:"Av. Santa Fe — dulce de leche, Malbec, alfajor Cachafaz/Balcarce"},
+   {t:"15h00",x:"🥚 Florería Atlântico — Arroyo 872, Retiro. Entre como se fosse comprar flores e peça para ver a \"entrada\" — porta de aço atrás da câmara de vinhos",egg:1,h:"Aberto em 2013, inspirado nos speakeasies da Lei Seca americana. Um dos 50 melhores bares do mundo."},
+   {t:"17h00",x:"Prado y Neptuno — charuto com whisky"},
+   {t:"",x:"🍦 Sorvete de despedida Rapanui — peça o Franuí",g:1,h:"💡 Peça o Franuí junto com um de dulce de leche — é a combinação mais tradicional da casa."},
+   {t:"19h00",x:"Última caminhada Av. Alvear"},
+   {t:"",x:"Uber para Aeroparque — 2h antes do voo"},
+  ]},
+];
+
+const BAIRROS = {
+ recoleta:{nome:"Recoleta",estrelas:5,mood:"Elegante · europeu · calmo — arquitetura francesa",tempo:"3-4h",
+  comecar:"Cemitério da Recoleta / Plaza Francia",ruas:["Av. Alvear","Ayacucho","Junín","Posadas"],
+  como:"Olhe para cima o tempo todo — as fachadas são o show. Entre numa padaria e compre medialunas. Termine com sorvete.",
+  missao:"Encontrar uma rua bonita que não estava no roteiro",
+  cafe:"Qualquer padaria na Av. Coronel Díaz — peça medialunas",
+  sorvete:"Un'Altra Volta (Av. Coronel Díaz 2614) — dulce de leche granizado",
+  vinho:"Prado y Neptuno (Ayacucho 2134) — bar no andar de cima da tabacaria, boa carta de Malbec",
+  comprar:"Av. Santa Fe — dulce de leche, alfajor Cachafaz, charutos",
+  descansar:"Plaza Francia — bancos com sombra e vista para o Cemitério",
+  fotografar:"Fachadas da Av. Alvear ao entardecer, luz baixa",
+  erro:"Sair cedo demais — Recoleta rende mais devagar, à tarde com luz baixa fica ainda mais bonita.",
+  mapaIlustrado:["🌸 Floralis Genérica","🌳 Plaza Francia","🏛️ Cemitério da Recoleta","🎨 Centro Cultural","🍷 Av. Alvear"],
+  seSobrar:"Entre em alguma livraria da Av. Santa Fe. Sente num banco da Plaza Francia sem pressa. Volte pela Av. Alvear de noite — fica ainda mais bonita iluminada.",
+  naoVale:"Não atravesse a cidade para ver outro cemitério ou outra praça parecida — Recoleta já entrega isso melhor do que em qualquer outro bairro.",
+  companheiro:"Bom dia. Recoleta é o bairro mais elegante da cidade — aqui não tem pressa nenhuma. Olhe para cima o tempo todo. Se atrasar meia hora numa padaria boa, tudo bem. O objetivo de hoje não é ver tudo, é sentir o clima."},
+ centro:{nome:"Centro / Microcentro",estrelas:4,mood:"Monumental · histórico · movimentado",tempo:"4-5h",
+  comecar:"Plaza de Mayo",ruas:["Av. de Mayo","Florida","Av. 9 de Julho"],
+  como:"Caminhe a Av. de Mayo inteira até o Obelisco sem pressa. Entre no Tortoni mesmo com fila — vale.",
+  missao:"Achar a varanda do Cabildo",
+  cafe:"Café Tortoni (Av. de Mayo 829) — torta de chocolate ou churros",
+  sorvete:"—",
+  vinho:"Bares na Galería Güemes (Florida 165)",
+  comprar:"Calle Florida — lojas variadas, câmbio oficial também fica aqui",
+  descansar:"Plaza de Mayo, banco à sombra perto da Catedral",
+  fotografar:"Palácio Barolo ao entardecer, luz lateral",
+  erro:"Tentar ver tudo correndo — o Centro tem história em cada quadra, vale ir devagar.",
+  mapaIlustrado:["🏛️ Plaza de Mayo","☕ Café Tortoni","🏢 Palácio Barolo","🗼 Obelisco","🎭 Teatro Colón"],
+  seSobrar:"Entre na Galería Güemes e olhe a cúpula. Sente numa mesa do Tortoni por mais 20min. Ande mais uma quadra pela 9 de Julho só para sentir a escala da avenida.",
+  naoVale:"Não corra para encaixar um museu extra no Centro hoje — a essência daqui é a arquitetura na rua, não uma sala fechada.",
+  companheiro:"Hoje o Centro é sobre escala e história. Ande devagar pela Av. de Mayo, prédio por prédio. Se a fila do Tortoni estiver grande, sente num banco da praça e volte depois — não tem hora certa para nada disso."},
+ santelmo:{nome:"San Telmo",estrelas:5,mood:"Boêmio · histórico · antiquários e tango de rua",tempo:"3h",
+  comecar:"Mercado de San Telmo",ruas:["Defensa","Balcarce"],
+  como:"Entre no mercado sem pressa, depois desça a Defensa até a Plaza Dorrego. Aos domingos vira feira inteira.",
+  missao:"Comprar algo num antiquário",
+  cafe:"Bares com mesa na calçada na Plaza Dorrego",
+  sorvete:"—",
+  vinho:"Qualquer bodegón na Calle Defensa — peça um Malbec da casa",
+  comprar:"Antiquários da Calle Defensa",
+  descansar:"Plaza Dorrego, mesa de bar do lado de fora",
+  fotografar:"Casarões coloniais da Calle Defensa, luz da manhã",
+  erro:"Ir num dia de semana achando que vai ter a feira — só rola aos domingos.",
+  mapaIlustrado:["🏛️ Mercado San Telmo","🖼️ Casa Mínima","🛍️ Calle Defensa","🎻 Plaza Dorrego"],
+  seSobrar:"Entre em mais um antiquário — sempre tem um que você não viu. Sente na Plaza Dorrego com um copo de vinho e observe o movimento por mais um tempo.",
+  naoVale:"Não force ver a feira de antiguidades num dia de semana — sem a feira, San Telmo ainda vale, mas não espere o mesmo clima do domingo.",
+  companheiro:"San Telmo é o bairro mais boêmio da cidade — aqui não existe roteiro certo. Desça a Defensa devagar, entre no que parecer interessante. Se achar um antiquário bom, fique o tempo que quiser."},
+ palermo:{nome:"Palermo (Soho + Hollywood)",estrelas:5,mood:"Descolado · criativo · ruas arborizadas",tempo:"4h+",
+  comecar:"Plaza Serrano / Daniel Bakery",ruas:["Guatemala","Honduras","Costa Rica","Gurruchaga","Malabia","El Salvador"],
+  como:"Não siga roteiro rígido — entre em lojas, cafés, observe murais. Esse é o bairro certo para 'sem pressa'.",
+  missao:"Encontrar seu café favorito da viagem",
+  cafe:"Daniel Bakery (Honduras 3714) — croissant de pistache ou framboesa",
+  sorvete:"Antiche Tentazioni (Honduras 4770) — pistache di Sicilia",
+  vinho:"Wine bar em qualquer esquina de Palermo Soho perto da Plaza Serrano",
+  comprar:"Lojas de design em Palermo Soho, ruas Gurruchaga e El Salvador",
+  descansar:"Plaza Serrano, mesa de bar de esquina",
+  fotografar:"Murais nas ruas Honduras e Costa Rica",
+  erro:"Ir embora cedo — Palermo rende melhor à tarde, quando os cafés enchem de gente local.",
+  mapaIlustrado:["☕ Daniel Bakery","🍦 Antiche Tentazioni","🌳 Plaza Armenia","🍷 Wine Bar","🌳 Plaza Serrano"],
+  seSobrar:"Entre numa loja de design que chamou atenção. Sente num café que ainda não conhece. Caminhe mais uma rua que não estava no plano.",
+  naoVale:"Hoje não atravesse o bairro inteiro atrás de um lugar específico só porque estava numa lista — em Palermo, o que está na sua frente costuma ser tão bom quanto.",
+  companheiro:"Bom dia. Hoje é um dos melhores dias da viagem. Não tenha pressa. Se o roteiro atrasar meia hora, tudo bem — Palermo é justamente o bairro onde vale mais a pena improvisar. Entre numa loja. Sente num café. Peça um vinho. Converse. Hoje o objetivo não é cumprir roteiro, é aproveitar. Quando cansar, siga para Puerto Madero."},
+ puertomadero:{nome:"Puerto Madero",estrelas:3,mood:"Moderno · final de tarde · luzes",tempo:"1h30",
+  comecar:"Puente de la Mujer",ruas:["Orla da doca"],
+  como:"Vá no fim de tarde para o pôr do sol. Kraken Bar tem a melhor vista.",
+  missao:"Ver o pôr do sol com uma cerveja na mão",
+  cafe:"—",
+  sorvete:"—",
+  vinho:"Kraken Bar, orla de Puerto Madero — cerveja artesanal com vista para a Puente de la Mujer",
+  comprar:"—",
+  descansar:"Reserva Ecológica Costanera Sur, gratuita",
+  fotografar:"Puente de la Mujer ao pôr do sol",
+  erro:"Ir de manhã — o bairro só ganha vida à tardinha.",
+  mapaIlustrado:["🌉 Puente de la Mujer","🍺 Kraken Bar","🌿 Reserva Ecológica"],
+  seSobrar:"Caminhe mais um trecho da Reserva Ecológica — o skyline fica ainda melhor mais longe da ponte.",
+  naoVale:"Não venha aqui de manhã achando que vai ter o mesmo clima — sem o pôr do sol, Puerto Madero perde metade da graça.",
+  companheiro:"Puerto Madero é o final perfeito de um dia cheio. Chegue devagar, sem pressa para fotografar tudo de uma vez. Sente com uma cerveja e deixe o sol descer na sua frente."},
+ laboca:{nome:"La Boca",estrelas:4,mood:"Colorido · popular · futebol",tempo:"1h30-2h",
+  comecar:"Caminito",ruas:["Caminito","Necochea"],
+  como:"Fique no eixo turístico. Coma empanada em pé na rua. La Bombonera é opcional.",
+  missao:"Fotografar uma fachada colorida diferente",
+  cafe:"—",
+  sorvete:"—",
+  vinho:"—",
+  comprar:"Ateliês de arte ao longo do Caminito",
+  descansar:"—",
+  fotografar:"Caminito, meio da rua, luz da manhã",
+  erro:"Se afastar do circuito principal a pé — vá e volte de Uber.",
+  mapaIlustrado:["🎨 Caminito","⚽ La Bombonera (opcional)","🥟 Empanada de rua"],
+  seSobrar:"Volte ao Caminito por um ângulo diferente — de manhã e ao meio-dia a luz muda completamente as cores das casas.",
+  naoVale:"Não caminhe a pé para fora do eixo turístico de La Boca — o bairro ao redor não é seguro para explorar sem roteiro.",
+  companheiro:"La Boca é rápido e visual — não precisa de mais de duas horas aqui. Aproveite as cores, coma uma empanada em pé, e siga em frente sem culpa quando sentir que já viu o suficiente."},
+ colonia:{nome:"Colônia do Sacramento (Uruguai)",estrelas:5,mood:"Calmo · ruas de pedra · rio",tempo:"dia inteiro",
+  comecar:"Portão de Campo",ruas:["Rua dos Suspiros"],
+  como:"É pequena — caminhe sem mapa, tudo aparece. Suba no Farol para a vista completa.",
+  missao:"Fotografar uma porta antiga",
+  cafe:"Qualquer um à beira do rio",
+  sorvete:"—",
+  vinho:"Restaurantes à beira do Rio da Prata — peça com o chivito",
+  comprar:"Artesanato nas ruas do Bairro Histórico",
+  descansar:"Banco de frente para o Rio da Prata, perto do Farol",
+  fotografar:"Rua dos Suspiros, luz da manhã",
+  erro:"Trocar dinheiro com cambista de rua — use cartão ou casa de câmbio.",
+  mapaIlustrado:["🚪 Portão de Campo","🏘️ Rua dos Suspiros","🗼 Farol","🍽️ Restaurante à beira do rio"],
+  seSobrar:"Sente num banco de frente para o rio sem fazer nada. Ande pelas ruas menos óbvias longe do Portão — Colônia inteira é pequena o bastante para se perder sem risco.",
+  naoVale:"Não corra para ver tudo em 2 horas achando pouco tempo — Colônia é pequena, dá para ver com calma em 4-5h sem pressa nenhuma.",
+  companheiro:"Colônia pede lentidão. É um dia fora da rotina de Buenos Aires, então trate como tal — sem pressa, sem lista para riscar. Suba no Farol, depois sente e deixe o tempo passar."},
+ tigre:{nome:"Tigre + Delta",estrelas:4,mood:"Natureza · rio · descanso",tempo:"dia inteiro",
+  comecar:"Paseo Victorica",ruas:["Paseo Victorica"],
+  como:"Caminhe a beira do rio, depois pegue a lancha para o Delta. É o dia mais relaxante da viagem.",
+  missao:"Sentar olhando o rio sem pressa nenhuma",
+  cafe:"Padaria local perto da estação — mate com facturas",
+  sorvete:"—",
+  vinho:"Timón Dorado, à beira do Delta",
+  comprar:"Puerto de Frutos — artesanato e móveis",
+  descansar:"Paseo Victorica, banco de frente para o rio",
+  fotografar:"Casas de palafita no Delta, do barco",
+  erro:"Não confirmar o horário da última lancha de volta.",
+  mapaIlustrado:["🚂 Estação Tigre","🚶 Paseo Victorica","🛍️ Puerto de Frutos","🚤 Lancha","🍽️ Timón Dorado"],
+  seSobrar:"Fique mais um tempo no Delta antes de pegar a lancha de volta — não tem pressa nenhuma para voltar cedo.",
+  naoVale:"Não tente encaixar mais um passeio de barco além do Timón Dorado — um já entrega a experiência completa do Delta.",
+  companheiro:"Tigre é o dia para desacelerar de verdade. O rio manda no ritmo, não você. Sente, observe, deixe a lancha te levar sem pressa nenhuma."},
+}
+
+const GASTRO = {
+ parrillas:[
+  {n:"Bife de chorizo + provoleta",d:"Corte mais pedido + queijo grelhado de entrada. Peça em qualquer parrilla de bairro.",p:"$$",onde:"Don Julio (Guatemala 4699, Palermo) — a melhor da cidade, Top 50 do mundo. Las Cabras e La Carnicería (Palermo Soho) são ótimas alternativas mais em conta."},
+ ],
+ empanadas:[
+  {n:"Empanada frita",d:"Recheio de carne, azeitona e ovo — diferente das assadas. Coma em pé na rua.",p:"$",onde:"Barraquinhas do Caminito (La Boca) e bancas do Mercado de San Telmo."},
+ ],
+ pizza:[
+  {n:"Muzza com fainá",d:"Pão de grão de bico por cima da pizza — invenção portenha única no mundo.",p:"$",onde:"Qualquer pizzaria clássica no entorno de San Telmo ou Centro — é tradição de bodegão, não precisa de nome específico."},
+ ],
+ doces:[
+  {n:"Alfajor Cachafaz/Balcarce",d:"Menos turístico que Havanna, queridinho dos argentinos.",p:"$",onde:"Av. Santa Fe, lojas de doces em geral."},
+  {n:"Franuí (Rapanui)",d:"Framboesa congelada coberta de chocolate — o sorvete mais vendido do país.",p:"$",onde:"Rapanui (Uruguay 1284) — considerada a melhor sorveteria de Buenos Aires."},
+  {n:"Sorvete de pistache",d:"Clássico italiano-argentino, cremoso e nada doce demais.",p:"$",onde:"Antiche Tentazioni (Honduras 4770, Palermo) — gelato feito na hora, você vê a produção pelo vidro."},
+  {n:"Croissant recheado",d:"Tendência recente de Buenos Aires — croissant com recheios como pistache e framboesa.",p:"$",onde:"Daniel Bakery (Honduras 3714, Palermo) — a que começou a moda na cidade."},
+  {n:"Churros com chocolate",d:"Clássico de café histórico, melhor puro ou com chocolate quente para mergulhar.",p:"$",onde:"Café Tortoni (Av. de Mayo 829) — ambiente Belle Époque de 1858."},
+  {n:"Facturas",d:"Folhados de padaria — café da manhã típico argentino.",p:"$",onde:"Qualquer padaria local — em Tigre a experiência é mais autêntica que em Buenos Aires."},
+ ],
+ bebidas:[
+  {n:"Fernet com Coca",d:"A bebida mais consumida pelos jovens argentinos.",p:"$",onde:"Qualquer bar de bairro em Palermo — não precisa de lugar específico."},
+  {n:"Malbec",d:"O vinho tinto símbolo da Argentina.",p:"$$",onde:"Prado y Neptuno (Ayacucho 2134, Recoleta) — tabacaria com bar de vinhos no andar de cima."},
+  {n:"Cerveja artesanal",d:"Boa opção para fim de tarde com vista.",p:"$",onde:"Kraken Bar, orla de Puerto Madero — vista para a Puente de la Mujer."},
+  {n:"Drink escondido",d:"Coquetel autoral num bar difícil de achar.",p:"$$",onde:"Florería Atlântico (Arroyo 872, Retiro) — entrada escondida atrás da câmara de vinhos de uma floricultura."},
+  {n:"Mate",d:"Ritual social — se o anfitrião tomar, peça para experimentar.",p:"$",onde:"Em qualquer padaria de bairro, especialmente em Tigre."},
+ ],
+};
+
+const ARMADILHAS = [
+ "Não troque dinheiro com cambista de rua — use casa de câmbio oficial ou cartão.",
+ "Não pague hospedagem fora da plataforma (Booking/Airbnb) mesmo se pedirem — é golpe clássico.",
+ "Não enfrente fila enorme no Tortoni sem necessidade — a galeria lateral costuma ter entrada mais rápida.",
+ "Não coma no primeiro restaurante de Caminito — ande um pouco mais e compare.",
+ "RG precisa ter menos de 10 anos de emissão e estar em bom estado — senão pode ser recusado.",
+];
+
+const PLANO_B = "Se chover: El Ateneo Grand Splendid, Galería Güemes, Mercado de San Telmo e Centro Cultural Recoleta são cobertos e ficam bem próximos do roteiro original.";
+
+const RESERVAS = [
+ {id:"r1",nome:"Passagem aérea GRU ↔ AEP",dia:"15 e 22/set",status:"ok"},
+ {id:"r2",nome:"Apartamento — Austria 2510, Recoleta",dia:"15–22/set",status:"ok"},
+ {id:"r3",nome:"Buquebus — Colônia do Sacramento",dia:"17/set",status:"ok"},
+ {id:"r4",nome:"Piazzolla Tango — Galería Güemes",dia:"18/set",status:"ok"},
+ {id:"r5",nome:"Timón Dorado (@timondorado)",dia:"21/set",status:"pendente"},
+ {id:"r6",nome:"Web check-in Buquebus",dia:"fazer 16/set à noite",status:"pendente"},
+];
+
+const FRASES = [
+ {pt:"Quanto custa?",es:"¿Cuánto cuesta?"},
+ {pt:"A conta, por favor",es:"La cuenta, por favor"},
+ {pt:"Tem desconto pagando em dinheiro?",es:"¿Hay descuento pagando en efectivo?"},
+ {pt:"Pode chamar um Uber para mim?",es:"¿Me puede pedir un Uber?"},
+ {pt:"Onde fica o banheiro?",es:"¿Dónde está el baño?"},
+ {pt:"Estou perdido, pode me ajudar?",es:"Estoy perdido, ¿me puede ayudar?"},
+ {pt:"Não como carne / sou vegetariano",es:"No como carne / soy vegetariano"},
+ {pt:"Preciso de um médico",es:"Necesito un médico"},
+ {pt:"Perdi meu documento",es:"Perdí mi documento"},
+ {pt:"Qual o wi-fi daqui?",es:"¿Cuál es el wifi de acá?"},
+];
+
+const VOCE_SABIA_DIA = {
+ 1: "A Floralis Genérica pesa 18 toneladas e suas pétalas se movem por um mecanismo hidráulico — abrem de manhã e fecham à noite, como uma flor de verdade.",
+ 2: "O Café Tortoni já recebeu Jorge Luis Borges, Carlos Gardel e até Albert Einstein nas suas mesas — e a decoração é praticamente a mesma desde 1900.",
+ 3: "Colônia do Sacramento foi fundada pelos portugueses em 1680 e trocou de mãos com os espanhóis pelo menos 8 vezes ao longo da história.",
+ 4: "La Bombonera tem esse apelido porque o formato do estádio lembra uma caixa de bombom — com três arquibancadas quase verticais.",
+ 5: "Palermo é o maior bairro de Buenos Aires — tão grande que foi dividido em sub-bairros como Soho e Hollywood só para facilitar a localização.",
+ 6: "A feira de San Telmo existe desde os anos 1970 e hoje reúne mais de 270 bancas todo domingo, só na Calle Defensa.",
+ 7: "O Delta do Tigre tem mais de 350 ilhas — a maioria só é acessível de barco, sem nenhuma rua chegando até lá.",
+ 8: "Buenos Aires tem mais de 300 livrarias — uma das maiores concentrações por habitante do mundo inteiro.",
+};
+
+
+
+/* ================= STATE (localStorage) ================= */
+function getState(){
+  return JSON.parse(localStorage.getItem('ba_state')||'{"checks":{},"diary":{},"favs":[],"budget":50}');
+}
+function setState(s){ localStorage.setItem('ba_state', JSON.stringify(s)); }
+let state = getState();
+
+/* ================= NAV ================= */
+const NAVS = [
+ {group:"Dashboards"},
+ {id:"dashboard",ic:"🏠",label:"Dashboard do dia"},
+ {id:"resumo",ic:"🧾",label:"Dashboard da viagem"},
+ {group:"Antes de sair"},
+ {id:"transporte",ic:"🚕",label:"Transporte"},
+ {id:"dinheiro",ic:"💵",label:"Dinheiro"},
+ {id:"reservas",ic:"🎫",label:"Reservas"},
+ {group:"Durante o passeio"},
+ {id:"bairros",ic:"🧭",label:"Bairro agora"},
+ {id:"dias",ic:"📅",label:"Roteiro do dia"},
+ {id:"missoes",ic:"🎯",label:"Missões"},
+ {id:"gastro",ic:"🍽️",label:"O que comer"},
+ {group:"Depois do passeio"},
+ {id:"numeros",ic:"🔢",label:"Números da viagem"},
+ {id:"favoritos",ic:"⭐",label:"Favoritos"},
+ {group:"Sempre à mão"},
+ {id:"frases",ic:"💬",label:"Frases úteis"},
+ {id:"armadilhas",ic:"⚠️",label:"Armadilhas"},
+ {id:"config",ic:"⚙️",label:"Configurações"},
+];
+
+function buildSidebar(){
+  const nav = document.getElementById('sbnav');
+  nav.innerHTML = NAVS.map(n=>{
+    if(n.group !== undefined){
+      if(n.group === "") return '';
+      return `<div style="font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);padding:.8rem .7rem .3rem;">${n.group}</div>`;
+    }
+    return `<div class="sb-item" id="nav-${n.id}" onclick="go('${n.id}')"><span class="ic">${n.ic}</span>${n.label}</div>`;
+  }).join('');
+}
+
+function toggleSidebar(){
+  const sb = document.getElementById('sidebar');
+  const main = document.querySelector('.main');
+  const isMobile = window.innerWidth <= 760;
+  if(isMobile){
+    sb.classList.toggle('open');
+    document.getElementById('overlay').classList.toggle('show');
+  } else {
+    sb.classList.toggle('hidden');
+    main.classList.toggle('full');
+  }
+}
+function closeSidebar(){
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+}
+
+function go(page, param){
+  document.querySelectorAll('.sb-item').forEach(e=>e.classList.remove('active'));
+  const navEl = document.getElementById('nav-'+page);
+  if(navEl) navEl.classList.add('active');
+  closeSidebar();
+  window.scrollTo(0,0);
+  RENDER[page] ? RENDER[page](param) : RENDER.dashboard();
+}
+
+/* ================= RENDER FUNCTIONS ================= */
+const RENDER = {};
+
+RENDER.dashboard = function(){
+  document.getElementById('pagetitle').textContent = 'Dashboard';
+
+  // calcula o dia da viagem com base na data real do dispositivo
+  const tripStart = new Date(2026,8,15); // 15/set/2026 (mes 8 = setembro, zero-indexed)
+  const now = new Date();
+  const todayMid = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const diffDays = Math.round((todayMid - tripStart) / 86400000) + 1;
+
+  let today, statusLabel;
+  if(diffDays < 1){
+    today = DAYS[0];
+    statusLabel = `Faltam ${1-diffDays} dia(s) para a viagem começar — prévia do Dia 1`;
+  } else if(diffDays > DAYS.length){
+    today = DAYS[DAYS.length-1];
+    statusLabel = 'Viagem encerrada — última prévia: Dia ' + DAYS.length;
+  } else {
+    today = DAYS[diffDays-1];
+    statusLabel = `Hoje é o Dia ${today.n} da viagem`;
+  }
+
+  const allItems = DAYS.flatMap((d,di)=>d.itens.map((it,ii)=>({...it,di,ii})));
+  const totalChk = allItems.length;
+  const doneChk = Object.values(state.checks).filter(v=>v).length;
+
+  document.getElementById('content').innerHTML = `
+   <div class="card">
+     <h2>${statusLabel} 👋</h2>
+     <div class="grid2">
+       <div class="stat"><b>Dia ${today.n}</b><span>${today.date}</span></div>
+       <div class="stat"><b>${today.title}</b><span>bairro do dia</span></div>
+       <div class="stat"><b>~${today.km} km</b><span>caminhada estimada</span></div>
+       <div class="stat"><b>${doneChk}/${totalChk}</b><span>itens marcados na viagem</span></div>
+     </div>
+     <p style="font-size:12px;color:var(--muted);margin-top:.7rem;line-height:1.55;">${today.resumo}</p>
+     <div class="qbtns">
+       <div class="qbtn" onclick="go('dia', ${today.n})">Ver roteiro de hoje</div>
+       <div class="qbtn" onclick="openMood()">✨ Estou sem pressa</div>
+     </div>
+   </div>
+   <div class="card">
+     <h2>Antes de sair de casa hoje</h2>
+     ${["Documento (RG + passaporte)","Dólar físico + cartão","Powerbank","Casaco médio","Seguro viagem","Ingresso Tango salvo offline"].map((t,i)=>{
+       const key='pretrip_'+i; const on=!!state.checks[key];
+       return `<div class="chk-item"><div class="chk ${on?'on':''}" onclick="toggleChk('${key}')"></div><div class="chk-text ${on?'on':''}">${t}</div></div>`;
+     }).join('')}
+   </div>
+   <div class="card" style="background:linear-gradient(135deg,var(--surface),var(--surface2));border-color:var(--gold);">
+     <h2>💡 Curiosidade de hoje</h2>
+     <p id="vocesabia-text" style="font-size:13px;color:var(--text);line-height:1.6;"></p>
+   </div>
+   <div class="card">
+     <h2>O que já está garantido</h2>
+     <div class="gastro-item"><div><div class="gastro-name">Buquebus — Colônia</div><div class="gastro-desc">17/set, 08h30</div></div><span class="pill gold">✓ ok</span></div>
+     <div class="gastro-item"><div><div class="gastro-name">Piazzolla Tango</div><div class="gastro-desc">18/set, 21h00</div></div><span class="pill gold">✓ ok</span></div>
+     <div class="gastro-item"><div><div class="gastro-name">Timón Dorado</div><div class="gastro-desc">21/set — @timondorado</div></div><span class="pill">pendente</span></div>
+   </div>
+  `;
+  document.getElementById('vocesabia-text').textContent = VOCE_SABIA_DIA[today.n];
+};
+
+RENDER.dias = function(){
+  document.getElementById('pagetitle').textContent = 'Minha Viagem';
+  document.getElementById('content').innerHTML = `
+    <div class="card"><h2>Sua viagem, dia a dia</h2>
+    ${DAYS.map(d=>`
+      <div class="day-row" onclick="go('dia', ${d.n})">
+        <div class="day-badge">${d.n}</div>
+        <div class="day-info"><b>${d.title}</b><span>${d.date} · ~${d.km}km</span></div>
+        <div class="day-arrow">›</div>
+      </div>`).join('')}
+    </div>`;
+};
+
+RENDER.dia = function(n){
+  const d = DAYS[n-1];
+  document.getElementById('pagetitle').textContent = 'Dia '+d.n;
+  const itemsHtml = d.itens.map((it,ii)=>{
+    const key = 'd'+d.n+'_'+ii;
+    const on = !!state.checks[key];
+    let extra = '';
+    if(it.h){
+      const hid = 'h_'+key;
+      extra = `<span class="hist-toggle" onclick="toggleHist('${hid}')">i</span><div class="hist-box" id="${hid}">${it.h}</div>`;
+    }
+    let tags = '';
+    if(it.egg) tags += `<span class="egg-tag">easter egg</span>`;
+    if(it.g) tags += `<span class="pill gold" style="margin-left:5px;">gastronomia</span>`;
+    if(it.opt) tags += `<span class="pill" style="margin-left:5px;">opcional</span>`;
+    if(it.tag) tags += `<span class="pill green" style="margin-left:5px;">${it.tag}</span>`;
+    return `<div class="chk-item" style="align-items:flex-start;">
+      <div class="chk ${on?'on':''}" onclick="toggleChk('${key}')" style="margin-top:2px;"></div>
+      <div style="flex:1;">
+        <span style="font-size:10px;color:var(--gold);margin-right:6px;">${it.t||''}</span>
+        <span class="chk-text ${on?'on':''}">${it.x}</span>${tags}${extra}
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('content').innerHTML = `
+   <div class="card">
+     <h2>${d.title}</h2>
+     <p style="font-size:12.5px;color:var(--muted);line-height:1.6;">${d.resumo}</p>
+   </div>
+   <div class="card" style="background:linear-gradient(135deg,var(--surface),var(--surface2));border-color:var(--gold);">
+     <h2>💡 Curiosidade de hoje</h2>
+     <p style="font-size:13px;color:var(--text);line-height:1.6;">${VOCE_SABIA_DIA[d.n]}</p>
+   </div>
+   <div class="card"><h2>O plano de hoje</h2>${itemsHtml}</div>
+   <div class="card">
+     <h2>Como foi o seu dia?</h2>
+     <textarea rows="3" id="diaryBox" placeholder="Melhor café, melhor momento, observações...">${state.diary['d'+d.n]||''}</textarea>
+     <button class="small-btn" onclick="saveDiary(${d.n})">Salvar</button>
+   </div>
+  `;
+};
+
+let companheiroMode = {};
+
+let bairroAberto = null;
+
+RENDER.bairros = function(){
+  document.getElementById('pagetitle').textContent = 'Bairro agora';
+  document.getElementById('content').innerHTML = Object.entries(BAIRROS).map(([key,b])=>{
+    const isCompanion = !!companheiroMode[key];
+    const isOpen = bairroAberto === key;
+
+    const header = `<div class="bairro-title" style="cursor:pointer;" onclick="toggleBairroAberto('${key}')">
+       <b>${b.nome}</b>
+       <span style="display:flex;align-items:center;gap:6px;">
+         <span class="stars">${'★'.repeat(b.estrelas)}${'☆'.repeat(5-b.estrelas)}</span>
+         <span style="color:var(--dim);font-size:12px;">${isOpen?'▾':'▸'}</span>
+       </span>
+     </div>`;
+
+    if(!isOpen){
+      return `<div class="bairro-card">${header}<div class="bairro-mood" style="margin-top:2px;">${b.mood}</div></div>`;
+    }
+
+    if(isCompanion){
+      return `<div class="bairro-card" style="background:linear-gradient(180deg,var(--surface2),var(--surface));border-color:var(--gold);">
+        ${header}
+        <span class="pill gold" style="cursor:pointer;margin-top:.5rem;display:inline-block;" onclick="toggleCompanion('${key}')">✕ sair do modo companheiro</span>
+        <p style="font-size:14px;line-height:1.8;color:var(--text);margin-top:.7rem;">${b.companheiro}</p>
+      </div>`;
+    }
+    return `
+    <div class="bairro-card">
+      ${header}
+      <div class="bairro-mood">${b.mood}</div>
+      <div class="qbtns" style="margin:.4rem 0 .7rem;">
+        <div class="qbtn" style="border-color:var(--gold);color:var(--gold);" onclick="toggleCompanion('${key}')">✨ Modo Companheiro</div>
+      </div>
+      <div class="grid2" style="margin-bottom:.5rem;">
+        <div class="stat"><b>${b.tempo}</b><span>tempo ideal</span></div>
+        <div class="stat"><b>${b.comecar}</b><span>comece aqui</span></div>
+      </div>
+      <div class="bairro-section"><h4>Mapa ilustrado</h4>
+        <div style="font-size:13px;line-height:2.1;color:var(--text);">${b.mapaIlustrado.join(' &nbsp;→&nbsp; ')}</div>
+      </div>
+      <div class="bairro-section"><h4>Ruas para caminhar</h4><div class="street-tags">${b.ruas.map(r=>`<span class="street-tag">${r}</span>`).join('')}</div></div>
+      <div class="bairro-section"><h4>Como aproveitar</h4><p>${b.como}</p></div>
+      ${b.cafe!=='—'?`<div class="bairro-section"><h4>☕ Café</h4><p>${b.cafe}</p></div>`:''}
+      ${b.sorvete!=='—'?`<div class="bairro-section"><h4>🍦 Sorvete</h4><p>${b.sorvete}</p></div>`:''}
+      ${b.vinho!=='—'?`<div class="bairro-section"><h4>🍷 Vinho/drink</h4><p>${b.vinho}</p></div>`:''}
+      ${b.comprar!=='—'?`<div class="bairro-section"><h4>🛍️ Comprar</h4><p>${b.comprar}</p></div>`:''}
+      <div class="bairro-section"><h4>Missão do bairro</h4><p>🎯 ${b.missao}</p></div>
+      <div class="bairro-section" style="background:rgba(74,124,89,.12);border-radius:8px;padding:.6rem;"><h4>Se sobrar tempo</h4><p>➡ ${b.seSobrar}</p></div>
+      <div class="bairro-section" style="background:rgba(122,46,46,.12);border-radius:8px;padding:.6rem;"><h4>Hoje não vale a pena</h4><p>${b.naoVale}</p></div>
+      <div class="bairro-section"><h4>Erro comum</h4><p>${b.erro}</p></div>
+    </div>`;
+  }).join('');
+};
+function toggleBairroAberto(key){ bairroAberto = (bairroAberto === key) ? null : key; RENDER.bairros(); }
+function toggleCompanion(key){ companheiroMode[key] = !companheiroMode[key]; RENDER.bairros(); }
+
+RENDER.gastro = function(){
+  document.getElementById('pagetitle').textContent = 'O que comer';
+  const section = (title, arr) => `
+    <div class="card"><h2>${title}</h2>
+    ${arr.map(x=>`<div style="padding:.6rem 0;border-bottom:0.5px solid var(--border);">
+       <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+         <div class="gastro-name">${x.n}</div><span class="gastro-tag">${x.p}</span>
+       </div>
+       <div class="gastro-desc">${x.d}</div>
+       ${x.onde ? `<div style="font-size:11.5px;color:var(--gold);margin-top:4px;">📍 ${x.onde}</div>` : ''}
+     </div>`).join('')}
+    </div>`;
+  document.getElementById('content').innerHTML =
+    section('Parrilla', GASTRO.parrillas) +
+    section('Empanadas', GASTRO.empanadas) +
+    section('Pizza', GASTRO.pizza) +
+    section('Doces', GASTRO.doces) +
+    section('Bebidas', GASTRO.bebidas);
+};
+
+RENDER.missoes = function(){
+  document.getElementById('pagetitle').textContent = 'Missões';
+  document.getElementById('content').innerHTML = `<div class="card"><h2>Missões por bairro</h2>` +
+   Object.entries(BAIRROS).map(([k,b])=>{
+     const key='mission_'+k; const on=!!state.checks[key];
+     return `<div class="chk-item"><div class="chk ${on?'on':''}" onclick="toggleChk('${key}')"></div><div class="chk-text ${on?'on':''}"><b>${b.nome}:</b> ${b.missao}</div></div>`;
+   }).join('') + `</div>`;
+};
+
+RENDER.favoritos = function(){
+  document.getElementById('pagetitle').textContent = 'Favoritos';
+
+  const candidatos = [];
+  DAYS.forEach(d=>{
+    d.itens.forEach((it,idx)=>{
+      if(it.g || it.egg){
+        candidatos.push({key: 'fav_d'+d.n+'_i'+idx, nome: it.x.replace(/^(🍦|🥚|\[OPCIONAL\]\s*)/,'').trim(), origem: `Dia ${d.n} — ${d.title}`});
+      }
+    });
+  });
+  Object.entries(BAIRROS).forEach(([k,b])=>{
+    candidatos.push({key:'fav_bairro_'+k, nome: b.nome, origem: 'Bairro'});
+  });
+
+  if(!state.favOrder) state.favOrder = [];
+  state.favOrder = state.favOrder.filter(k => state.favs.includes(k));
+  state.favs.forEach(k => { if(!state.favOrder.includes(k)) state.favOrder.push(k); });
+  setState(state);
+
+  if(!state.customFavs) state.customFavs = [];
+  state.customFavs.forEach((nome,i)=>{
+    candidatos.push({key:'fav_custom_'+i, nome: nome, origem:'Adicionado por você'});
+  });
+
+  const byKey = {};
+  candidatos.forEach(x => byKey[x.key] = x);
+  const ranked = state.favOrder.map(k => byKey[k]).filter(Boolean);
+
+  document.getElementById('content').innerHTML = `
+   ${ranked.length ? `
+   <div class="card"><h2>⭐ Seu ranking da viagem</h2>
+   <p style="font-size:11.5px;color:var(--muted);margin-bottom:.5rem;">Use as setas para reordenar — o nº1 é o seu favorito absoluto.</p>
+   ${ranked.map((x,i)=>`
+     <div class="gastro-item">
+       <div style="display:flex;align-items:center;gap:8px;">
+         <div class="stop-num">${i+1}</div>
+         <div><div class="gastro-name">${x.nome}</div><div class="gastro-desc">${x.origem}</div></div>
+       </div>
+       <div style="display:flex;gap:4px;">
+         <span class="pill" style="cursor:pointer;" onclick="moveFav(${i},-1)">▲</span>
+         <span class="pill" style="cursor:pointer;" onclick="moveFav(${i},1)">▼</span>
+         <span class="pill" style="cursor:pointer;" onclick="toggleFav('${x.key}')">✕</span>
+       </div>
+     </div>`).join('')}
+   </div>` : `<div class="card"><h2>Ainda sem favoritos</h2><p style="font-size:12.5px;color:var(--muted);">Marque abaixo o que você mais curtiu — vira um ranking só seu, pronto pra rever no fim da viagem.</p></div>`}
+
+   <div class="card"><h2>➕ Adicionar algo seu</h2>
+     <p style="font-size:11px;color:var(--muted);margin-bottom:.5rem;">Uma rua, um lugar, qualquer coisa que não está na lista.</p>
+     <input type="text" id="customFavInput" placeholder="ex: aquela rua com os murais em Chacarita">
+     <button class="small-btn" onclick="addCustomFav()">Adicionar</button>
+   </div>
+
+   <div class="card"><h2>Marcar como favorito</h2>
+   ${candidatos.map(x=>{
+     const on = state.favs.includes(x.key);
+     return `<div class="chk-item"><div class="chk ${on?'on':''}" onclick="toggleFav('${x.key}')"></div><div class="chk-text ${on?'on':''}">${x.nome} <span style="color:var(--dim);font-size:11px;">— ${x.origem}</span></div></div>`;
+   }).join('')}
+   </div>
+  `;
+};
+
+RENDER.resumo = function(){
+  document.getElementById('pagetitle').textContent = 'Resumo da viagem';
+  if(!state.numeros) state.numeros = {};
+  if(!state.melhores) state.melhores = {};
+  if(!state.colecao) state.colecao = {};
+  if(!state.favOrder) state.favOrder = [];
+
+  const totals = {};
+  CAMPOS_NUMEROS.forEach(f => totals[f.k] = 0);
+  Object.values(state.numeros).forEach(dia=>{
+    CAMPOS_NUMEROS.forEach(f => totals[f.k] += Number(dia[f.k]||0));
+  });
+
+  const missoesFeitas = Object.keys(state.checks).filter(k=>k.startsWith('mission_') && state.checks[k]).length;
+  const totalMissoes = Object.keys(BAIRROS).length;
+  const colecaoFeita = COLECAO.filter(x => state.colecao[x]).length;
+  const diasComDiario = Object.values(state.diary).filter(t=>t && t.trim()).length;
+
+  // top 3 favoritos, se existirem
+  const candidatos = [];
+  DAYS.forEach(d=>{
+    d.itens.forEach((it,idx)=>{
+      if(it.g || it.egg){
+        candidatos.push({key:'fav_d'+d.n+'_i'+idx, nome: it.x.replace(/^(🍦|🥚|\[OPCIONAL\]\s*)/,'').trim()});
+      }
+    });
+  });
+  Object.entries(BAIRROS).forEach(([k,b])=> candidatos.push({key:'fav_bairro_'+k, nome:b.nome}));
+  const byKey = {}; candidatos.forEach(x=>byKey[x.key]=x);
+  const top3 = state.favOrder.map(k=>byKey[k]).filter(Boolean).slice(0,3);
+
+  const algumMelhor = MELHORES.some(m => state.melhores[m.k] && state.melhores[m.k].trim());
+
+  document.getElementById('content').innerHTML = `
+   <div class="card" style="background:linear-gradient(160deg,var(--surface2),var(--surface));border-color:var(--gold);text-align:center;">
+     <div style="font-size:11px;letter-spacing:.15em;color:var(--gold);">🇦🇷 SUA VIAGEM A BUENOS AIRES</div>
+     <div style="font-size:24px;font-weight:600;margin-top:4px;">${DAYS.length} dias inesquecíveis</div>
+     <div style="font-size:12px;color:var(--muted);margin-top:2px;">15 a 22 de setembro</div>
+   </div>
+
+   <div class="card"><h2>📊 Os números</h2>
+     <div class="grid2">
+       ${CAMPOS_NUMEROS.map(f=>`<div class="stat"><b>${totals[f.k]}</b><span>${f.ic} ${f.label}</span></div>`).join('')}
+       <div class="stat"><b>${missoesFeitas}/${totalMissoes}</b><span>🎯 missões concluídas</span></div>
+       <div class="stat"><b>${state.favs.length}</b><span>❤️ favoritos marcados</span></div>
+       <div class="stat"><b>${colecaoFeita}/${COLECAO.length}</b><span>🏅 coleção completa</span></div>
+       <div class="stat"><b>${diasComDiario}/${DAYS.length}</b><span>📓 dias com anotação</span></div>
+     </div>
+   </div>
+
+   ${algumMelhor ? `
+   <div class="card"><h2>🏆 Os melhores</h2>
+     ${MELHORES.map(m=> state.melhores[m.k] && state.melhores[m.k].trim() ? `<div class="gastro-item"><div><div class="gastro-name">${m.ic} ${m.label}</div><div class="gastro-desc" style="color:var(--gold);">${state.melhores[m.k]}</div></div></div>` : '').join('')}
+   </div>` : `<div class="card"><h2>🏆 Os melhores</h2><p style="font-size:12px;color:var(--muted);">Preencha em "Números da viagem" — assim que escrever, aparece aqui.</p></div>`}
+
+   ${top3.length ? `
+   <div class="card"><h2>⭐ Seu pódio</h2>
+     ${top3.map((x,i)=>`<div class="gastro-item"><div style="display:flex;align-items:center;gap:8px;"><div class="stop-num">${i+1}</div><div class="gastro-name">${x.nome}</div></div></div>`).join('')}
+   </div>` : ''}
+
+   <div class="card"><h2>📓 Diário — trechos</h2>
+     ${diasComDiario ? DAYS.filter(d=>state.diary['d'+d.n] && state.diary['d'+d.n].trim()).map(d=>`<div style="margin-bottom:.6rem;"><b style="font-size:12px;color:var(--gold);">Dia ${d.n}</b><p style="font-size:12px;color:var(--muted);margin-top:2px;">${state.diary['d'+d.n]}</p></div>`).join('') : `<p style="font-size:12px;color:var(--muted);">Nenhuma anotação ainda — escreva no Diário durante a viagem para ver aqui depois.</p>`}
+   </div>
+
+   <div class="card" style="text-align:center;">
+     <p style="font-size:13px;color:var(--muted);font-style:italic;">"Daqui um ano, que essa tela te faça lembrar: foi uma viagem incrível."</p>
+   </div>
+  `;
+};
+
+RENDER.diario = function(){
+  document.getElementById('pagetitle').textContent = 'Diário';
+  document.getElementById('content').innerHTML = `<div class="card"><h2>Como foi o seu dia?</h2>` +
+   DAYS.map(d=>`<div style="margin-bottom:.8rem;"><b style="font-size:12.5px;">Dia ${d.n} — ${d.title}</b><p style="font-size:12px;color:var(--muted);margin-top:2px;">${state.diary['d'+d.n]||'<em>sem anotação ainda</em>'}</p></div>`).join('')
+   + `</div>`;
+};
+
+RENDER.transporte = function(){
+  document.getElementById('pagetitle').textContent = 'Transporte';
+  document.getElementById('content').innerHTML = `
+   <div class="card"><h2>Quando usar cada um</h2>
+     <p style="font-size:12.5px;color:var(--muted);line-height:1.7;">
+     <b style="color:var(--text)">Uber/Cabify</b> — a maior parte dos deslocamentos entre bairros.<br>
+     <b style="color:var(--text)">Trem (Linha Mitre)</b> — Retiro → Tigre, ~50min.<br>
+     <b style="color:var(--text)">Buquebus</b> — Buenos Aires → Colônia, ~1h15.<br>
+     <b style="color:var(--text)">A pé</b> — dentro de cada bairro, sempre que possível.
+     </p>
+   </div>
+   <div class="card"><h2>Apps para instalar</h2>
+     ${["Uber","Cabify","Trenes Argentinos","Google Maps offline","Buquebus","Wise"].map(a=>{
+       const key='app_'+a; const on=!!state.checks[key];
+       return `<div class="chk-item"><div class="chk ${on?'on':''}" onclick="toggleChk('${key}')"></div><div class="chk-text ${on?'on':''}">${a}</div></div>`;
+     }).join('')}
+   </div>`;
+};
+
+RENDER.dinheiro = function(){
+  document.getElementById('pagetitle').textContent = 'Dinheiro';
+  document.getElementById('content').innerHTML = `
+   <div class="card"><h2>Estratégia</h2>
+     <p style="font-size:12.5px;color:var(--muted);line-height:1.7;">
+     <b style="color:var(--text)">Cartão Wise</b> — restaurantes, Uber, compras maiores.<br>
+     <b style="color:var(--text)">Dólar físico (~US$350)</b> — feira, trem, lancha, gorjetas, Colônia.<br>
+     <b style="color:var(--text)">Peso argentino</b> — trocar aos poucos em casa de câmbio oficial, não tudo de uma vez.
+     </p>
+   </div>
+   <div class="card"><h2>Orçamento de referência</h2>
+     <div class="grid2">
+       <div class="stat"><b>US$50</b><span>por pessoa / dia</span></div>
+       <div class="stat"><b>US$350</b><span>total físico p/ casal</span></div>
+     </div>
+   </div>`;
+};
+
+RENDER.reservas = function(){
+  document.getElementById('pagetitle').textContent = 'Reservas';
+  document.getElementById('content').innerHTML = `
+   <div class="card"><h2>Suas reservas — toque para marcar</h2>
+   ${RESERVAS.map(r=>{
+     const st = state.reservas && state.reservas[r.id] ? state.reservas[r.id] : r.status;
+     const isOk = st==='ok';
+     return `<div class="gastro-item" style="cursor:pointer;" onclick="toggleReserva('${r.id}')">
+       <div><div class="gastro-name">${r.nome}</div><div class="gastro-desc">${r.dia}</div></div>
+       <span class="pill ${isOk?'gold':''}">${isOk?'✓ ok':'pendente'}</span>
+     </div>`;
+   }).join('')}
+   </div>`;
+};
+
+RENDER.frases = function(){
+  document.getElementById('pagetitle').textContent = 'Frases úteis';
+  document.getElementById('content').innerHTML = `
+   <div class="card"><h2>Frases pra usar na hora</h2>
+   ${FRASES.map(f=>`<div class="gastro-item"><div><div class="gastro-name">${f.pt}</div><div class="gastro-desc" style="color:var(--gold);">${f.es}</div></div></div>`).join('')}
+   </div>`;
+};
+
+RENDER.armadilhas = function(){
+  document.getElementById('pagetitle').textContent = 'Armadilhas';
+  document.getElementById('content').innerHTML = `
+   <div class="card"><h2>Fique atento</h2>
+     ${ARMADILHAS.map(a=>`<div class="chk-item"><div style="font-size:13px;">⚠️ ${a}</div></div>`).join('')}
+   </div>
+   <div class="card"><h2>Plano B (se chover)</h2><p style="font-size:12.5px;color:var(--muted);">${PLANO_B}</p></div>
+  `;
+};
+
+RENDER.config = function(){
+  document.getElementById('pagetitle').textContent = 'Configurações';
+  document.getElementById('content').innerHTML = `
+   <div class="card"><h2>Seus dados ficam só com você</h2>
+     <p style="font-size:12px;color:var(--muted);margin-bottom:.6rem;">Tudo fica no seu celular (localStorage) — sem login, sem servidor.</p>
+     <button class="small-btn" onclick="exportBackup()">Exportar backup</button>
+   </div>
+   <div class="card"><h2>Zerar app</h2>
+     <button class="small-btn" style="background:#7a2e2e;" onclick="resetApp()">Apagar tudo e recomeçar</button>
+   </div>`;
+};
+
+function toggleReserva(id){
+  if(!state.reservas) state.reservas = {};
+  const r = RESERVAS.find(x=>x.id===id);
+  const cur = state.reservas[id] || r.status;
+  state.reservas[id] = cur==='ok' ? 'pendente' : 'ok';
+  setState(state);
+  rerenderCurrent();
+}
+
+const CAMPOS_NUMEROS = [
+ {k:"km", label:"km caminhados", ic:"🚶"},
+ {k:"parrillas", label:"parrillas", ic:"🥩"},
+ {k:"cafes", label:"cafés", ic:"☕"},
+ {k:"sorvetes", label:"sorvetes", ic:"🍦"},
+ {k:"vinhos", label:"taças de vinho", ic:"🍷"},
+ {k:"medialunas", label:"medialunas", ic:"🥐"},
+ {k:"empanadas", label:"empanadas", ic:"🥟"},
+ {k:"pizzas", label:"pizzas", ic:"🍕"},
+ {k:"doces", label:"doces", ic:"🍰"},
+ {k:"cervejas", label:"cervejas", ic:"🍺"},
+ {k:"drinks", label:"drinks", ic:"🍸"},
+ {k:"fotos", label:"fotos tiradas", ic:"📸"},
+];
+
+const MELHORES = [
+ {k:"bairro", label:"Bairro favorito", ic:"🏆"},
+ {k:"cafe", label:"Melhor café", ic:"☕"},
+ {k:"vinho", label:"Melhor vinho", ic:"🍷"},
+ {k:"parrilla", label:"Melhor parrilla", ic:"🥩"},
+ {k:"sorvete", label:"Melhor sorvete", ic:"🍦"},
+ {k:"pordosol", label:"Melhor pôr do sol", ic:"🌅"},
+ {k:"momento", label:"Momento favorito da viagem", ic:"❤️"},
+];
+
+const COLECAO = ["Malbec","Torrontés","Fernet","Doce de leite","Alfajor","Empanada","Choripán","Provoleta","Bife de Chorizo","Milanesa","Fugazzeta","Mate","Locro","Chivito"];
+
+RENDER.numeros = function(){
+  document.getElementById('pagetitle').textContent = 'Números da viagem';
+  if(!state.numeros) state.numeros = {};
+  if(!state.melhores) state.melhores = {};
+  if(!state.colecao) state.colecao = {};
+
+  const totals = {};
+  CAMPOS_NUMEROS.forEach(f => totals[f.k] = 0);
+  Object.values(state.numeros).forEach(dia=>{
+    CAMPOS_NUMEROS.forEach(f => totals[f.k] += Number(dia[f.k]||0));
+  });
+
+  const missoesFeitas = Object.keys(state.checks).filter(k=>k.startsWith('mission_') && state.checks[k]).length;
+  const colecaoFeita = COLECAO.filter(x => state.colecao[x]).length;
+
+  const painelHtml = `
+   <div class="card" style="background:linear-gradient(160deg,var(--surface2),var(--surface));border-color:var(--gold);">
+     <div style="text-align:center;margin-bottom:.8rem;">
+       <div style="font-size:11px;letter-spacing:.15em;color:var(--gold);">🇦🇷 SUA VIAGEM</div>
+       <div style="font-size:22px;font-weight:600;margin-top:2px;">${DAYS.length} dias</div>
+     </div>
+     <div class="grid2">
+       ${CAMPOS_NUMEROS.map(f=>`<div class="stat" id="stat-${f.k}"><b>${totals[f.k]}</b><span>${f.ic} ${f.label}</span></div>`).join('')}
+       <div class="stat"><b>${missoesFeitas}</b><span>🎯 missões concluídas</span></div>
+       <div class="stat"><b>${state.favs.length}</b><span>❤️ favoritos</span></div>
+       <div class="stat"><b>${colecaoFeita}/${COLECAO.length}</b><span>🏅 coleção completa</span></div>
+     </div>
+   </div>
+
+   <div class="card"><h2>🏆 Os melhores da viagem</h2>
+   <p style="font-size:11px;color:var(--muted);margin-bottom:.6rem;">Escreva livremente — isso é o que vai virar sua história depois.</p>
+   ${MELHORES.map(m=>`
+     <div style="margin-bottom:.6rem;">
+       <label style="font-size:11.5px;color:var(--gold);display:block;margin-bottom:3px;">${m.ic} ${m.label}</label>
+       <input type="text" value="${state.melhores[m.k]||''}" placeholder="escreva aqui..."
+         onchange="setMelhor('${m.k}',this.value)">
+     </div>
+   `).join('')}
+   </div>`;
+
+  const colecaoHtml = `
+   <div class="card"><h2>🎒 Coleção — experimentei</h2>
+   <p style="font-size:11px;color:var(--muted);margin-bottom:.4rem;">Vá marcando conforme for provando cada clássico argentino.</p>
+   ${COLECAO.map(item=>{
+     const on = !!state.colecao[item];
+     return `<div class="chk-item"><div class="chk ${on?'on':''}" onclick="toggleColecao('${item}')"></div><div class="chk-text ${on?'on':''}">${item}</div></div>`;
+   }).join('')}
+   </div>`;
+
+  const diasHtml = DAYS.map(d=>{
+    const vals = state.numeros[d.n] || {};
+    const isOpen = numeroDiaAberto === d.n;
+    return `
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;" onclick="toggleNumeroDia(${d.n})">
+        <h2 style="margin-bottom:0;">Dia ${d.n} — ${d.title}</h2>
+        <span style="color:var(--dim);font-size:12px;">${isOpen?'▾':'▸'}</span>
+      </div>
+      ${isOpen ? `
+      <div class="grid2" style="margin-top:.6rem;">
+        ${CAMPOS_NUMEROS.map(f=>`
+          <div>
+            <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px;">${f.ic} ${f.label}</label>
+            <input type="number" min="0" value="${vals[f.k] ?? ''}" placeholder="0"
+              onchange="setNumero(${d.n},'${f.k}',this.value)">
+          </div>
+        `).join('')}
+      </div>` : ''}
+    </div>`;
+  }).join('');
+
+  document.getElementById('content').innerHTML = painelHtml + colecaoHtml + diasHtml;
+};
+let numeroDiaAberto = null;
+function toggleNumeroDia(n){ numeroDiaAberto = (numeroDiaAberto === n) ? null : n; RENDER.numeros(); }
+
+function setNumero(dia, campo, valor){
+  if(!state.numeros) state.numeros = {};
+  if(!state.numeros[dia]) state.numeros[dia] = {};
+  state.numeros[dia][campo] = valor;
+  setState(state);
+  let total = 0;
+  Object.values(state.numeros).forEach(d=> total += Number(d[campo]||0));
+  const el = document.querySelector('#stat-'+campo+' b');
+  if(el) el.textContent = total;
+}
+function setMelhor(campo, valor){
+  if(!state.melhores) state.melhores = {};
+  state.melhores[campo] = valor;
+  setState(state);
+}
+function toggleColecao(item){
+  if(!state.colecao) state.colecao = {};
+  state.colecao[item] = !state.colecao[item];
+  setState(state);
+  rerenderCurrent();
+}
+
+function toggleChk(key){
+  state.checks[key] = !state.checks[key];
+  setState(state);
+  rerenderCurrent();
+}
+function toggleFav(key){
+  if(state.favs.includes(key)) state.favs = state.favs.filter(k=>k!==key);
+  else state.favs.push(key);
+  setState(state);
+  rerenderCurrent();
+}
+function addCustomFav(){
+  const input = document.getElementById('customFavInput');
+  const val = input.value.trim();
+  if(!val) return;
+  if(!state.customFavs) state.customFavs = [];
+  state.customFavs.push(val);
+  const newKey = 'fav_custom_' + (state.customFavs.length - 1);
+  if(!state.favs.includes(newKey)) state.favs.push(newKey);
+  setState(state);
+  rerenderCurrent();
+}
+
+function moveFav(idx, dir){
+  const arr = state.favOrder;
+  const newIdx = idx + dir;
+  if(newIdx < 0 || newIdx >= arr.length) return;
+  [arr[idx], arr[newIdx]] = [arr[newIdx], arr[idx]];
+  setState(state);
+  rerenderCurrent();
+}
+function toggleHist(id){ document.getElementById(id).classList.toggle('open'); }
+function saveDiary(n){ state.diary['d'+n] = document.getElementById('diaryBox').value; setState(state); alert('Salvo!'); }
+function exportBackup(){ const blob = new Blob([JSON.stringify(state)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='ba_backup.json'; a.click(); }
+function resetApp(){
+  if(confirm('Apagar tudo e recomeçar do zero?')){
+    localStorage.removeItem('ba_state');
+    state = {checks:{},diary:{},favs:[],favOrder:[],customFavs:[],numeros:{},melhores:{},colecao:{},reservas:{},budget:50};
+    setState(state);
+    companheiroMode = {};
+    bairroAberto = null;
+    numeroDiaAberto = null;
+    go('dashboard');
+  }
+}
+
+let currentPage = 'dashboard', currentParam = null;
+const _go = go;
+go = function(page, param){ currentPage = page; currentParam = param; _go(page, param); };
+function rerenderCurrent(){ RENDER[currentPage] ? RENDER[currentPage](currentParam) : RENDER.dashboard(); }
+
+/* ================= MOOD MODAL ================= */
+const WANTS = [
+ {k:"cafe",label:"☕ Café",field:"cafe"},
+ {k:"sorvete",label:"🍦 Sorvete",field:"sorvete"},
+ {k:"vinho",label:"🍷 Vinho / drink",field:"vinho"},
+ {k:"comprar",label:"🛍️ Comprar",field:"comprar"},
+ {k:"descansar",label:"🪑 Descansar",field:"descansar"},
+ {k:"fotografar",label:"📸 Fotografar",field:"fotografar"},
+];
+let moodBairro = null;
+
+function openMood(){
+  moodBairro = null;
+  renderMoodStep1();
+  document.getElementById('moodOverlay').classList.add('show');
+}
+function renderMoodStep1(){
+  document.querySelector('.modal h3').textContent = 'Sem pressa nenhuma — onde você está agora?';
+  const grid = document.getElementById('moodGrid');
+  grid.innerHTML = Object.entries(BAIRROS).map(([key,b])=>`<div class="mood-btn" onclick="pickBairro('${key}')">${b.nome}</div>`).join('');
+  document.getElementById('moodAnswer').innerHTML = '';
+}
+function pickBairro(key){
+  moodBairro = key;
+  const b = BAIRROS[key];
+  document.querySelector('.modal h3').textContent = `Você está em ${b.nome}. O que você quer agora?`;
+  const grid = document.getElementById('moodGrid');
+  grid.innerHTML = WANTS.filter(w=>b[w.field] && b[w.field]!=='—').map(w=>`<div class="mood-btn" onclick="answerMood('${w.field}')">${w.label}</div>`).join('')
+    || '<div style="font-size:12px;color:var(--muted);grid-column:1/-1;">Esse bairro não tem sugestão específica nessas categorias — bom para só caminhar.</div>';
+  grid.innerHTML += `<div class="mood-btn" style="grid-column:1/-1;background:transparent;border-style:dashed;" onclick="renderMoodStep1()">‹ trocar de bairro</div>`;
+  document.getElementById('moodAnswer').innerHTML = '';
+}
+function answerMood(field){
+  const b = BAIRROS[moodBairro];
+  document.getElementById('moodAnswer').innerHTML = `<div class="mood-answer"><b>${b.nome}:</b> ${b[field]}</div>`;
+}
+function closeMood(){ document.getElementById('moodOverlay').classList.remove('show'); }
+
+/* ================= INIT ================= */
+buildSidebar();
+go('dashboard');
+</script>
+</body>
+</html>
