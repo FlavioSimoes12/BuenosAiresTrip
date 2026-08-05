@@ -470,13 +470,32 @@ const VOCE_SABIA_DIA = {
 };
 
 
+/* ================= STATE (Firebase Realtime Database) ================= */
+let state = {"checks":{},"diary":{},"favs":[],"favOrder":[],"customFavs":[],"numeros":{},"melhores":{},"colecao":{},"reservas":{},"budget":50};
 
-/* ================= STATE (localStorage) ================= */
-function getState(){
-  return JSON.parse(localStorage.getItem('ba_state')||'{"checks":{},"diary":{},"favs":[],"budget":50}');
+const stateRef = database.ref('viagem/estado_compartilhado');
+
+// Escuta mudanças do Firebase em tempo real
+stateRef.on('value', (snapshot) => {
+  const data = snapshot.val();
+  if (data) {
+    // Mescla com o estado padrão para não quebrar se faltar algum campo
+    state = { ...state, ...data };
+  } else {
+    // Primeira vez: envia o estado inicial para o Firebase
+    stateRef.set(state);
+  }
+  // Atualiza a tela sem reiniciar a página
+  if (typeof rerenderCurrent === 'function') {
+    rerenderCurrent();
+  }
+});
+
+function setState(s){
+  state = s;
+  stateRef.set(s);
 }
-function setState(s){ localStorage.setItem('ba_state', JSON.stringify(s)); }
-let state = getState();
+
 
 /* ================= NAV ================= */
 const NAVS = [
