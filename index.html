@@ -135,6 +135,7 @@ textarea, input[type=number]{
 .hist-box{display:none;font-size:11.5px;color:var(--muted);background:var(--surface2);border-left:2px solid var(--gold);padding:.5rem .7rem;margin-top:5px;border-radius:6px;line-height:1.55;}
 .hist-box.open{display:block;}
 </style>
+<base target="_blank">
 </head>
 <body>
 
@@ -165,6 +166,24 @@ textarea, input[type=number]{
     <div class="modal-close" onclick="closeMood()">fechar</div>
   </div>
 </div>
+
+  <!-- Bibliotecas do Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyBQCMlllVtmCw3daooldtm-KMoVKa2cN8E",
+    authDomain: "buenos-aires-trip.firebaseapp.com",
+    projectId: "buenos-aires-trip",
+    storageBucket: "buenos-aires-trip.firebasestorage.app",
+    messagingSenderId: "992253023548",
+    appId: "1:992253023548:web:b1be1c775edbb5690e3a39",
+    measurementId: "G-DL1697NZVR",
+    databaseURL: "https://buenos-aires-trip-default-rtdb.firebaseio.com/"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const database = firebase.database();
+</script>
 
 <script>
 /* ================= DATA ================= */
@@ -478,14 +497,13 @@ const stateRef = database.ref('viagem/estado_compartilhado');
 // Escuta mudanças do Firebase em tempo real
 stateRef.on('value', (snapshot) => {
   const data = snapshot.val();
+  console.log('[Firebase] Dados recebidos:', data);
   if (data) {
-    // Mescla com o estado padrão para não quebrar se faltar algum campo
     state = { ...state, ...data };
   } else {
-    // Primeira vez: envia o estado inicial para o Firebase
+    console.log('[Firebase] Primeiro acesso — enviando estado inicial');
     stateRef.set(state);
   }
-  // Atualiza a tela sem reiniciar a página
   if (typeof rerenderCurrent === 'function') {
     rerenderCurrent();
   }
@@ -978,7 +996,7 @@ RENDER.config = function(){
   document.getElementById('pagetitle').textContent = 'Configurações';
   document.getElementById('content').innerHTML = `
    <div class="card"><h2>Seus dados ficam só com você</h2>
-     <p style="font-size:12px;color:var(--muted);margin-bottom:.6rem;">Tudo fica no seu celular (localStorage) — sem login, sem servidor.</p>
+     <p style="font-size:12px;color:var(--muted);margin-bottom:.6rem;">Dados sincronizados em tempo real via Firebase — qualquer pessoa com o link vê as mesmas informações.</p>
      <button class="small-btn" onclick="exportBackup()">Exportar backup</button>
    </div>
    <div class="card"><h2>Zerar app</h2>
@@ -1158,7 +1176,7 @@ function resetApp(){
   if(confirm('Apagar tudo e recomeçar do zero?')){
     localStorage.removeItem('ba_state');
     state = {checks:{},diary:{},favs:[],favOrder:[],customFavs:[],numeros:{},melhores:{},colecao:{},reservas:{},budget:50};
-    setState(state);
+    stateRef.set(state);
     companheiroMode = {};
     bairroAberto = null;
     numeroDiaAberto = null;
@@ -1213,28 +1231,6 @@ function closeMood(){ document.getElementById('moodOverlay').classList.remove('s
 buildSidebar();
 go('dashboard');
 </script>
-  <!-- Bibliotecas do Firebase -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
-<script>
-  // Sua configuração
-  const firebaseConfig = {
-    apiKey: "AIzaSyBQCMlllVtmCw3daooldtm-KMoVKa2cN8E",
-    authDomain: "buenos-aires-trip.firebaseapp.com",
-    projectId: "buenos-aires-trip",
-    storageBucket: "buenos-aires-trip.firebasestorage.app",
-    messagingSenderId: "992253023548",
-    appId: "1:992253023548:web:b1be1c775edbb5690e3a39",
-    measurementId: "G-DL1697NZVR",
-    // Cole a URL que você copiou no Passo 2 entre as aspas abaixo:
-    databaseURL: "https://buenos-aires-trip-default-rtdb.firebaseio.com/" 
-  };
-
-  // Inicializa o Firebase e o Banco em tempo real
-  firebase.initializeApp(firebaseConfig);
-  const database = firebase.database();
-  const todoRef = database.ref('lista_viagem');
-</script>
 </body>
 </html>
