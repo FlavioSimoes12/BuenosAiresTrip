@@ -468,12 +468,8 @@ const FRASES = [
  {pt:"Quanto custa?",es:"¿Cuánto cuesta?"},
  {pt:"A conta, por favor",es:"La cuenta, por favor"},
  {pt:"Tem desconto pagando em dinheiro?",es:"¿Hay descuento pagando en efectivo?"},
- {pt:"Pode chamar um Uber para mim?",es:"¿Me puede pedir un Uber?"},
  {pt:"Onde fica o banheiro?",es:"¿Dónde está el baño?"},
  {pt:"Estou perdido, pode me ajudar?",es:"Estoy perdido, ¿me puede ayudar?"},
- {pt:"Não como carne / sou vegetariano",es:"No como carne / soy vegetariano"},
- {pt:"Preciso de um médico",es:"Necesito un médico"},
- {pt:"Perdi meu documento",es:"Perdí mi documento"},
  {pt:"Qual o wi-fi daqui?",es:"¿Cuál es el wifi de acá?"},
 ];
 
@@ -620,7 +616,7 @@ RENDER.dashboard = function(){
    </div>
    <div class="card">
      <h2>Antes de sair de casa hoje</h2>
-     ${["Documento (RG + passaporte)","Dólar físico + cartão","Powerbank","Casaco médio","Seguro viagem","Ingresso Tango salvo offline"].map((t,i)=>{
+     ${["Documento (RG + passaporte)","Dólar físico + cartão","Powerbank","Casaco médio","Seguro viagem"].map((t,i)=>{
        const key='pretrip_'+i; const on=!!state.checks[key];
        return `<div class="chk-item"><div class="chk ${on?'on':''}" onclick="toggleChk('${key}')"></div><div class="chk-text ${on?'on':''}">${t}</div></div>`;
      }).join('')}
@@ -629,12 +625,7 @@ RENDER.dashboard = function(){
      <h2>💡 Curiosidade de hoje</h2>
      <p id="vocesabia-text" style="font-size:13px;color:var(--text);line-height:1.6;"></p>
    </div>
-   <div class="card">
-     <h2>O que já está garantido</h2>
-     <div class="gastro-item"><div><div class="gastro-name">Buquebus — Colônia</div><div class="gastro-desc">17/set, 08h30</div></div><span class="pill gold">✓ ok</span></div>
-     <div class="gastro-item"><div><div class="gastro-name">Piazzolla Tango</div><div class="gastro-desc">18/set, 21h00</div></div><span class="pill gold">✓ ok</span></div>
-     <div class="gastro-item"><div><div class="gastro-name">Timón Dorado</div><div class="gastro-desc">21/set — @timondorado</div></div><span class="pill">pendente</span></div>
-   </div>
+   
   `;
   document.getElementById('vocesabia-text').textContent = VOCE_SABIA_DIA[today.n];
 };
