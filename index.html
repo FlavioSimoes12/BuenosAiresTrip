@@ -134,7 +134,43 @@ textarea, input[type=number]{
 .hist-toggle{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;border:1px solid var(--gold);color:var(--gold);font-size:9px;margin-left:5px;cursor:pointer;}
 .hist-box{display:none;font-size:11.5px;color:var(--muted);background:var(--surface2);border-left:2px solid var(--gold);padding:.5rem .7rem;margin-top:5px;border-radius:6px;line-height:1.55;}
 .hist-box.open{display:block;}
+
+/* ===== MAPA ===== */
+.map-card{padding:0!important;overflow:hidden;}
+.map-card .topbar{position:static!important;padding:8px 10px;border-bottom:0.5px solid var(--border);background:var(--surface);display:flex;gap:5px;overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch}
+.map-card .topbar::-webkit-scrollbar{display:none}
+.day-btn{background:var(--surface2);color:var(--muted);border:0.5px solid var(--border);border-radius:16px;padding:5px 12px;font-size:12px;cursor:pointer;flex-shrink:0}
+.day-btn.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+.map-day-title{padding:8px 12px;font-size:13px;color:var(--gold);font-weight:500;background:var(--bg);border-bottom:0.5px solid var(--border)}
+#mapContainer{height:45vh;min-height:280px;background:#171a21;z-index:1}
+.map-legend{padding:8px 12px;border-bottom:0.5px solid var(--border);background:var(--surface);font-size:11px;color:var(--muted);display:flex;gap:14px;flex-wrap:wrap}
+.map-legend span{display:flex;align-items:center;gap:4px}
+.dot{width:10px;height:10px;border-radius:50%;border:1.5px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.map-list-area{max-height:40vh;overflow-y:auto;padding:1rem;-webkit-overflow-scrolling:touch}
+.list-section h3{font-size:14px;color:var(--gold);margin-bottom:.6rem}
+.place-card{background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:.7rem .9rem;margin-bottom:.5rem;display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.place-info{flex:1}
+.place-name{font-size:13px;font-weight:500}
+.place-desc{font-size:11px;color:var(--muted);margin-top:2px;line-height:1.4}
+.place-tag{font-size:9px;padding:1px 7px;border-radius:10px;background:rgba(201,162,39,.15);color:var(--gold);white-space:nowrap}
+.place-tag.food{background:rgba(74,124,89,.2);color:#7fbf94}
+.place-tag.transport{background:rgba(241,196,15,.15);color:#f1c40f}
+.place-tag.drink{background:rgba(155,89,182,.15);color:#b37fcf}
+.place-tag.walk{background:rgba(52,152,219,.15);color:#5dade2}
+.place-tag.opt{background:rgba(86,91,102,.2);color:var(--dim)}
+a.gmaps-btn{display:inline-block;font-size:11px;color:var(--gold);text-decoration:none;border:0.5px solid var(--gold);padding:3px 10px;border-radius:6px;margin-top:4px}
+a.gmaps-btn:active{background:rgba(201,162,39,.15)}
+.map-obs{font-size:11px;color:var(--muted);margin-top:.4rem;padding:.5rem;background:rgba(201,162,39,.06);border-radius:6px;line-height:1.5}
+.popup-title{font-size:13px;font-weight:600;color:#0f1115}
+.popup-desc{font-size:11px;color:#555;margin-top:2px}
+@media(max-width:760px){
+  #mapContainer{height:40vh;min-height:220px}
+  .map-list-area{max-height:35vh}
+}
+
 </style>
+<base target="_blank">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <base target="_blank">
 </head>
 <body>
@@ -525,6 +561,7 @@ const NAVS = [
  {id:"dias",ic:"📅",label:"Roteiro do dia"},
  {id:"missoes",ic:"🎯",label:"Missões"},
  {id:"gastro",ic:"🍽️",label:"O que comer"},
+ {id:"mapa",ic:"🗺️",label:"Mapa"},
  {group:"Depois do passeio"},
  {id:"numeros",ic:"🔢",label:"Números da viagem"},
  {id:"favoritos",ic:"⭐",label:"Favoritos"},
@@ -1180,6 +1217,27 @@ const _go = go;
 go = function(page, param){ currentPage = page; currentParam = param; _go(page, param); };
 function rerenderCurrent(){ RENDER[currentPage] ? RENDER[currentPage](currentParam) : RENDER.dashboard(); }
 
+
+RENDER.mapa = function(){
+  document.getElementById('pagetitle').textContent = 'Mapa';
+  document.getElementById('content').innerHTML = `
+    <div class="card map-card">
+      <div class="topbar" id="mapTopbar"></div>
+      <div class="map-day-title" id="mapDayTitle">Dia 1 — Chegada + Recoleta</div>
+      <div id="mapContainer"></div>
+      <div class="map-legend">
+        <span><span class="dot" style="background:#e74c3c"></span>Comida</span>
+        <span><span class="dot" style="background:#3498db"></span>Passeio</span>
+        <span><span class="dot" style="background:#f1c40f"></span>Transporte</span>
+        <span><span class="dot" style="background:#9b59b6"></span>Bar/Drink</span>
+        <span><span class="dot" style="background:#C9A227;width:12px;height:12px"></span>Base</span>
+      </div>
+      <div class="map-list-area" id="mapListArea"></div>
+    </div>
+  `;
+  setTimeout(initMapa, 50);
+};
+
 /* ================= MOOD MODAL ================= */
 const WANTS = [
  {k:"cafe",label:"☕ Café",field:"cafe"},
@@ -1221,6 +1279,222 @@ function closeMood(){ document.getElementById('moodOverlay').classList.remove('s
 /* ================= INIT ================= */
 buildSidebar();
 go('dashboard');
+</script>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+const mapDays = {
+  1: {
+    title:"Dia 1 — Chegada + Recoleta",
+    pins:[
+      {lat:-34.5589,lng:-58.4156,name:"Aeroparque (AEP)",type:"transport",desc:"Pouso — Uber para apartamento (~15min)",query:"Aeroparque+Jorge+Newbery+Buenos+Aires"},
+      {lat:-34.5895,lng:-58.3974,name:"Apartamento Austria 2510",type:"hotel",desc:"Base da viagem — Recoleta",query:"Austria+2510+Recoleta+Buenos+Aires"},
+      {lat:-34.5817,lng:-58.3938,name:"Floralis Genérica",type:"walk",desc:"Escultura de aço — pétalas abrem de manhã",query:"Floralis+Generica+Buenos+Aires"},
+      {lat:-34.5841,lng:-58.3934,name:"Plaza Francia",type:"walk",desc:"Bancos com sombra, absorver a cidade",query:"Plaza+Francia+Buenos+Aires"},
+      {lat:-34.5889,lng:-58.3930,name:"Av. Alvear → Plaza San Martín",type:"walk",desc:"Mansões Belle Époque — olhe para cima",query:"Av+Alvear+Buenos+Aires"},
+      {lat:-34.5880,lng:-58.4100,name:"Un'Altra Volta",type:"food",desc:"Coronel Díaz 2614 — dulce de leche granizado",query:"Un'Altra+Volta+Coronel+Diaz+2614"},
+      {lat:-34.5845,lng:-58.3920,name:"Café La Biela",type:"food",desc:"Plaza Francia — café com leite do lado de fora",query:"Cafe+La+Biela+Buenos+Aires"}
+    ]
+  },
+  2: {
+    title:"Dia 2 — Centro / Microcentro",
+    pins:[
+      {lat:-34.6083,lng:-58.3712,name:"Plaza de Mayo",type:"walk",desc:"Casa Rosada, Catedral",query:"Plaza+de+Mayo+Buenos+Aires"},
+      {lat:-34.6087,lng:-58.3783,name:"Café Tortoni",type:"food",desc:"Av. de Mayo 829 — torta ou churros",query:"Cafe+Tortoni+Av+de+Mayo+829"},
+      {lat:-34.6096,lng:-58.3857,name:"Palácio Barolo",type:"walk",desc:"Av. de Mayo 1370 — fachada",query:"Palacio+Barolo+Buenos+Aires"},
+      {lat:-34.6037,lng:-58.3816,name:"Obelisco",type:"walk",desc:"Av. 9 de Julho — 67m",query:"Obelisco+Buenos+Aires"},
+      {lat:-34.6010,lng:-58.3831,name:"Teatro Colón",type:"walk",desc:"Cerrito 628 — fachada",query:"Teatro+Colon+Cerrito+628"},
+      {lat:-34.5975,lng:-58.3748,name:"Galería Güemes",type:"walk",desc:"Florida 165 — olhe para cima assim que entrar",query:"Galeria+Guemes+Florida+165"}
+    ]
+  },
+  3: {
+    title:"Dia 3 — Colônia do Sacramento",
+    pins:[
+      {lat:-34.6118,lng:-58.3628,name:"Terminal Buquebus",type:"transport",desc:"Embarque 08h30 — travessia 1h15",query:"Terminal+Buquebus+Buenos+Aires"},
+      {lat:-34.4717,lng:-57.8544,name:"Portão de Campo",type:"walk",desc:"Entrada do Bairro Histórico",query:"Puerta+de+Campo+Colonia+del+Sacramento"},
+      {lat:-34.47247,lng:-57.85122,name:"Rua dos Suspiros",type:"walk",desc:"Foto no meio da rua, rio ao fundo",query:"Calle+de+los+Suspiros+Colonia+del+Sacramento"},
+      {lat:-34.4725,lng:-57.8536,name:"Farol de Colônia",type:"walk",desc:"Suba para a vista completa",query:"Faro+de+Colonia+del+Sacramento"},
+      {lat:-34.4690,lng:-57.8530,name:"Almoço à beira do rio",type:"food",desc:"Chivito onde ver argentinos comendo",query:"restaurantes+orilla+rio+Colonia+del+Sacramento"}
+    ]
+  },
+  4: {
+    title:"Dia 4 — La Boca + Tango",
+    pins:[
+      {lat:-34.6345,lng:-58.3634,name:"Caminito",type:"walk",desc:"Cores, empanada frita em pé",query:"Caminito+La+Boca+Buenos+Aires"},
+      {lat:-34.6356,lng:-58.3647,name:"La Bombonera",type:"walk",desc:"Brandsen 805 — tour ou só fachada (opcional)",query:"La+Bombonera+Brandsen+805"},
+      {lat:-34.5885,lng:-58.3925,name:"Parque Thays",type:"walk",desc:"Recoleta — ao ar livre, esculturas, bancos",query:"Parque+Thays+Buenos+Aires"},
+      {lat:-34.5975,lng:-58.3748,name:"Piazzolla Tango",type:"walk",desc:"Galería Güemes — 21h00 (reservado)",query:"Piazzolla+Tango+Galeria+Guemes"}
+    ]
+  },
+  5: {
+    title:"Dia 5 — Palermo + Puerto Madero",
+    pins:[
+      {lat:-34.5942,lng:-58.4149,name:"Daniel Bakery",type:"food",desc:"Honduras 3714 — croissant de pistache",query:"Daniel+Bakery+Honduras+3714"},
+      {lat:-34.5895,lng:-58.4180,name:"Antiche Tentazioni",type:"food",desc:"Honduras 4770 — pistache di Sicilia",query:"Antiche+Tentazioni+Honduras+4770"},
+      {lat:-34.5890,lng:-58.4200,name:"Palermo Soho / Hollywood",type:"walk",desc:"Guatemala, Honduras, Gurruchaga — sem roteiro rígido",query:"Plaza+Serrano+Buenos+Aires"},
+      {lat:-34.5895,lng:-58.4220,name:"Uptown",type:"drink",desc:"Honduras 5124 — bar atrás da geladeira (opcional)",query:"Uptown+Honduras+5124+Buenos+Aires"},
+      {lat:-34.6075,lng:-58.3645,name:"Puente de la Mujer",type:"walk",desc:"Puerto Madero — pôr do sol (opcional)",query:"Puente+de+la+Mujer+Buenos+Aires"},
+      {lat:-34.6080,lng:-58.3630,name:"Kraken Bar",type:"drink",desc:"Puerto Madero — cerveja com vista (opcional)",query:"Kraken+Bar+Puerto+Madero"}
+    ]
+  },
+  6: {
+    title:"Dia 6 — Feira de San Telmo + Palermo",
+    pins:[
+      {lat:-34.62056,lng:-58.37167,name:"Plaza Dorrego — Feira",type:"walk",desc:"Antiquários, tango de rua, mate",query:"Plaza+Dorrego+Buenos+Aires"},
+      {lat:-34.6205,lng:-58.3710,name:"Estátua da Mafalda",type:"walk",desc:"Defensa com Chile",query:"Estatua+Mafalda+Defensa+Chile+Buenos+Aires"},
+      {lat:-34.6200,lng:-58.3720,name:"Pizza de muzza com fainá",type:"food",desc:"Em pé no balcão, perto da feira",query:"pizza+muzza+faina+San+Telmo"},
+      {lat:-34.5890,lng:-58.4200,name:"Fernet com Coca",type:"drink",desc:"Qualquer bar de bairro em Palermo",query:"bar+Palermo+Soho+Buenos+Aires"},
+      {lat:-34.5895,lng:-58.4180,name:"Jantar em Palermo",type:"food",desc:"Parrilla ou bodegón da região",query:"restaurante+Palermo+Soho+Buenos+Aires"}
+    ]
+  },
+  7: {
+    title:"Dia 7 — Tigre + Delta",
+    pins:[
+      {lat:-34.5915,lng:-58.3745,name:"Estação Retiro",type:"transport",desc:"Trem Linha Mitre ~9h30",query:"Estacion+Retiro+Buenos+Aires"},
+      {lat:-34.4250,lng:-58.5800,name:"Estação Tigre",type:"transport",desc:"Chegada ~10h20",query:"Estacion+Tigre+Buenos+Aires"},
+      {lat:-34.4255,lng:-58.5790,name:"Mate com facturas",type:"food",desc:"Padaria cheia de argentinos tomando mate",query:"padaria+Estacion+Tigre"},
+      {lat:-34.4230,lng:-58.5780,name:"Paseo Victorica",type:"walk",desc:"Caminhada à beira do rio",query:"Paseo+Victorica+Tigre"},
+      {lat:-34.4160,lng:-58.5730,name:"Puerto de Frutos",type:"walk",desc:"Feira de artesanato e móveis",query:"Puerto+de+Frutos+Tigre"},
+      {lat:-34.3984,lng:-58.5723,name:"Timón Dorado",type:"food",desc:"Río Sarmiento 124 — almoço à beira do Delta",query:"Timon+Dorado+Rio+Sarmiento+124+Tigre"}
+    ]
+  },
+  8: {
+    title:"Dia 8 — Último dia + Voo",
+    pins:[
+      {lat:-34.5960,lng:-58.3920,name:"La Panera Rosa",type:"food",desc:"Av. Santa Fe — café da manhã",query:"La+Panera+Rosa+Av+Santa+Fe+Buenos+Aires"},
+      {lat:-34.5950,lng:-58.3930,name:"Av. Santa Fe — compras",type:"walk",desc:"Dulce de leche, Malbec, alfajor Cachafaz/Balcarce",query:"Av+Santa+Fe+Buenos+Aires"},
+      {lat:-34.5920,lng:-58.3830,name:"Florería Atlântico",type:"drink",desc:"Arroyo 872 — entre como se fosse floricultura",query:"Floreria+Atlantico+Arroyo+872"},
+      {lat:-34.5880,lng:-58.3940,name:"Prado y Neptuno",type:"drink",desc:"Ayacucho 2134 — charuto com whisky",query:"Prado+y+Neptuno+Ayacucho+2134"},
+      {lat:-34.5970,lng:-58.3850,name:"Rapanui",type:"food",desc:"Uruguay 1284 — Franuí de despedida",query:"Rapanui+Uruguay+1284+Buenos+Aires"},
+      {lat:-34.5889,lng:-58.3930,name:"Última caminhada Alvear",type:"walk",desc:"Despedida de Recoleta",query:"Av+Alvear+Buenos+Aires"},
+      {lat:-34.5589,lng:-58.4156,name:"Aeroparque (AEP)",type:"transport",desc:"Uber — 2h antes do voo",query:"Aeroparque+Jorge+Newbery"}
+    ]
+  }
+};
+
+const mapNotes = {
+  1: '🚕 Uber do Aeroparque até o apartamento (~15min). O resto é a pé.',
+  2: '🚕 Uber de volta para Recoleta quando cansar. Não force San Telmo hoje — ele é o Dia 6.',
+  3: '🚤 Balsa de volta 17h00. Use cartão — não troque dinheiro com cambista.',
+  4: '🚕 Vá e volte de Uber para La Boca. Não ande para fora do eixo turístico a pé.',
+  5: '🚶 Tudo em Palermo é a pé. Puerto Madero só se sobrar energia.',
+  6: '🚕 Uber para San Telmo de manhã. A feira só rola aos domingos.',
+  7: '🚂 Sente do lado direito do trem (vista do rio). Confirme o horário da última volta.',
+  8: '🚕 Uber do centro/Recoleta para o Aeroparque no final da tarde. Evite horário de pico (17h30–19h30).'
+};
+
+let mapInstance = null, mapMarkers = [], mapPolyline = null;
+
+function mapTagClass(type){
+  if(type==='food') return 'food';
+  if(type==='transport') return 'transport';
+  if(type==='drink') return 'drink';
+  if(type==='walk') return 'walk';
+  return 'opt';
+}
+function mapTagLabel(type){
+  if(type==='food') return 'Comida';
+  if(type==='transport') return 'Transporte';
+  if(type==='drink') return 'Bar/Drink';
+  if(type==='walk') return 'Passeio';
+  if(type==='hotel') return 'Base';
+  return '';
+}
+
+function buildMapButtons(){
+  const bar = document.getElementById('mapTopbar');
+  if(!bar) return;
+  bar.innerHTML = '';
+  for(let i=1;i<=8;i++){
+    const btn = document.createElement('button');
+    btn.className = 'day-btn' + (i===1?' active':'');
+    btn.textContent = 'Dia '+i;
+    btn.onclick = ()=>showMapDay(i);
+    bar.appendChild(btn);
+  }
+}
+
+function showMapDay(n){
+  if(!mapInstance) return;
+  document.querySelectorAll('#mapTopbar .day-btn').forEach((b,idx)=>{
+    b.classList.toggle('active', idx+1===n);
+  });
+  const dayTitle = document.getElementById('mapDayTitle');
+  if(dayTitle) dayTitle.textContent = mapDays[n].title;
+
+  mapMarkers.forEach(m=>mapInstance.removeLayer(m));
+  mapMarkers=[];
+  if(mapPolyline){mapInstance.removeLayer(mapPolyline);mapPolyline=null;}
+
+  const icons = {
+    food: L.divIcon({className:'',html:'<div style="width:14px;height:14px;border-radius:50%;background:#e74c3c;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.5);"></div>',iconSize:[14,14],iconAnchor:[7,7]}),
+    walk: L.divIcon({className:'',html:'<div style="width:14px;height:14px;border-radius:50%;background:#3498db;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.5);"></div>',iconSize:[14,14],iconAnchor:[7,7]}),
+    transport: L.divIcon({className:'',html:'<div style="width:14px;height:14px;border-radius:50%;background:#f1c40f;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.5);"></div>',iconSize:[14,14],iconAnchor:[7,7]}),
+    drink: L.divIcon({className:'',html:'<div style="width:14px;height:14px;border-radius:50%;background:#9b59b6;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.5);"></div>',iconSize:[14,14],iconAnchor:[7,7]}),
+    hotel: L.divIcon({className:'',html:'<div style="width:16px;height:16px;border-radius:50%;background:#C9A227;border:2.5px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,.6);"></div>',iconSize:[16,16],iconAnchor:[8,8]})
+  };
+
+  const latlngs=[];
+  mapDays[n].pins.forEach((p,idx)=>{
+    const marker = L.marker([p.lat,p.lng],{icon:icons[p.type]||icons.walk}).addTo(mapInstance);
+    marker.bindPopup('<div class="popup-title">'+(idx+1)+'. '+p.name+'</div><div class="popup-desc">'+p.desc+'</div>');
+    mapMarkers.push(marker);
+    latlngs.push([p.lat,p.lng]);
+  });
+
+  if(latlngs.length>1){
+    mapPolyline = L.polyline(latlngs,{color:'#C9A227',weight:2.5,opacity:0.7,dashArray:'6,10'}).addTo(mapInstance);
+  }
+
+  if(latlngs.length===1){
+    mapInstance.setView(latlngs[0],15);
+  } else {
+    mapInstance.fitBounds(latlngs,{padding:[35,35],maxZoom:16});
+  }
+
+  const listArea = document.getElementById('mapListArea');
+  if(listArea){
+    let html = '<div class="list-section"><h3>Roteiro do dia</h3>';
+    mapDays[n].pins.forEach((p,idx)=>{
+      html += '<div class="place-card">';
+      html += '<div class="place-info">';
+      html += '<div class="place-name">'+(idx+1)+'. '+p.name+'</div>';
+      html += '<div class="place-desc">'+p.desc+'</div>';
+      html += '<a class="gmaps-btn" href="https://maps.google.com/?q='+p.query+'" target="_blank">Abrir no Maps</a>';
+      html += '</div>';
+      html += '<span class="place-tag '+mapTagClass(p.type)+'">'+mapTagLabel(p.type)+'</span>';
+      html += '</div>';
+    });
+    html += '<div class="map-obs">'+mapNotes[n]+'</div>';
+    html += '</div>';
+    listArea.innerHTML = html;
+  }
+}
+
+function initMapa(){
+  const container = document.getElementById('mapContainer');
+  if(!container) return;
+  container.offsetHeight;
+
+  if(mapInstance){
+    try{ mapInstance.remove(); }catch(e){}
+    mapInstance = null;
+  }
+  mapMarkers=[]; mapPolyline=null;
+
+  const centerBA = [-34.6037, -58.3816];
+  mapInstance = L.map('mapContainer', {zoomControl:false}).setView(centerBA, 13);
+
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution:'&copy; OSM &copy; CARTO',
+    subdomains:'abcd',
+    maxZoom:19
+  }).addTo(mapInstance);
+
+  buildMapButtons();
+  showMapDay(1);
+}
 </script>
 
 </body>
